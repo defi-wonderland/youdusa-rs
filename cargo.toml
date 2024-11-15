@@ -1,0 +1,14 @@
+[package]
+authors = ["Wonderland"]
+name = "youdusa-rs"
+description = "Handle Medusa fuzzing and generate forge tests for failed properties"
+version = "0.0.1"
+edition = "2021"
+repository = "https://github.com/defi-wonderland/youdusa-rs"
+
+[[bin]]
+name = "youdusa"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.92"
