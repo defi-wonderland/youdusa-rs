@@ -1,6 +1,7 @@
-use crate::ast;
+use crate::ast::{Ast, Function};
 use anyhow::Context;
 // use std::io::{self, Write};
+use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -14,7 +15,10 @@ pub fn run(path: PathBuf) -> anyhow::Result<()> {
 
     let reader = BufReader::new(child_process.stdout.take().unwrap());
 
-    let mut fn_to_append: Vec<ast::Ast> = Vec::new();
+    let mut collected_fn = HashMap::new();
+
+    let mut fn_to_append: Ast;
+    let mut reproducers: Vec<Ast> = Vec::new();
 
     reader.lines().for_each(|line| {
         let val = line.unwrap();
@@ -24,17 +28,26 @@ pub fn run(path: PathBuf) -> anyhow::Result<()> {
         if val.contains("FAILED") {
             // Parse the FAILED line to get the property name
             // we parse "⇾ [FAILED] Assertion Test: FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)";
-            let name = val
+            let mut name = val
                 .split('.')
                 .nth(1)
                 .unwrap_or("")
                 .split('(')
                 .next()
-                .unwrap_or("");
+                .unwrap_or("")
+                .to_string();
 
             // Check if there is a previous occurence of this property, add number if so
+            // Else add it to the hashmap
+            let counter = collected_fn.entry(name.clone()).or_insert(0);
+            *counter += 1;
+            if *counter > 1 {
+                name = format!("{}{}", name, counter);
+            }
 
             // create a new fn to append, with the property name
+            let new_fn = Ast::Function(Function::new(&name));
+            reproducers.push(new_fn);
         }
 
         // The call sequence is numbered, use this to isolate it

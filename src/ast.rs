@@ -18,6 +18,17 @@ pub struct Function {
 }
 
 impl Function {
+    // todo: builder?
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            visibility: Visibility::Public,
+            arguments: Vec::new(),
+            return_type: Type::None,
+            children: Vec::new(),
+        }
+    }
+
     /// Parse the name and remove any trailing digit (used when checking for duplicates)
     pub fn get_common_name(&self) -> String {
         return self
@@ -40,6 +51,7 @@ pub struct Argument {
 }
 
 pub enum Type {
+    None,
     Uint256,
     Address,
     Bytes,
@@ -50,6 +62,7 @@ pub enum Type {
 impl Type {
     const fn to_string(&self) -> &'static str {
         match self {
+            Type::None => "",
             Type::Uint256 => "uint256",
             Type::Address => "address",
             Type::Bytes => "bytes memory",
