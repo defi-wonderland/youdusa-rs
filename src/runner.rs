@@ -1,4 +1,6 @@
 use crate::ast::{Ast, Function};
+use crate::types::CheatsData;
+
 use anyhow::{Context, Result};
 // use std::io::{self, Write};
 use std::collections::HashMap;
@@ -86,18 +88,55 @@ impl MedusaRunner {
             self.reproducers.push(ast);
             self.current_ast = None;
         }
+
+        // todo: we should write the test to the FuzzTest contract here (ie on the fly)
     }
 
     /// Parse the line to extract the block height, msg sender, timestamp, fn name and its arguments, then
     /// add it as new children of the current temp ast (current_ast)
     /// This should be pushed to the ast in the order property fn call, then cheatcodes (visitor being lifo)
-    fn add_new_call_to_ast(&mut self, line: String) {
+    /// example: "1) FuzzTest.property_canAlwaysCreateRequest(uint256,uint256)(1, 1) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)"
+    fn add_new_call_to_ast(&mut self, line: String) -> Result<()> {
+        let cheatsData: CheatsData = self.parse_cheats_data(line).context("failed to parse call params")?;
+
         // Parse the block height
+        // Push roll
         // Parse the msg sender
+        // push prank
         // Parse the timestamp
+        // push warp
         // Parse the fn name and its arguments
-        // Generate the function calls (cheatcode and property)
-        // push everty thing to the current_ast
+        // push call
+        Ok(())
+    }
+
+    fn parse_cheats_data(&self, line: String) -> Option<CheatsData> {
+        line.rfind('(')
+            .and_then(|start| {
+                line.rfind(')')
+                    .map(|end| line[start+1..end].to_string())
+            })
+            .and_then(|params| {
+                // Split by comma and collect key-value pairs
+                let pairs: Vec<(&str, &str)> = params
+                    .split(',')
+                    .filter_map(|pair| {
+                        pair.split_once('=')
+                            .map(|(k, v)| (k.trim(), v.trim()))
+                    })
+                    .collect();
+
+                // Create a HashMap for easier lookup
+                let map: std::collections::HashMap<_, _> = pairs.into_iter().collect();
+
+                // Parse values with proper error handling
+                Some(CheatsData {
+                    blockToRoll: map.get("block")?.parse().ok()?,
+                    timestampToWarp: map.get("time")?.parse().ok()?,
+                    senderToPrank: map.get("sender")?.parse().ok()?,
+                    value: map.get("value")?.parse().ok()?,
+                })
+            })
     }
 
     fn pretty_print(&self, line: &str) {
@@ -131,6 +170,8 @@ pub fn run(path: PathBuf) -> anyhow::Result<()> {
         }
     }
 
+    // todo: now this doesn't work anymore, would need to return Child instead of ChildStdOut from spawn_medusa_process,
+    // -> check if Child::stdout is accessible -> is it really needed tho? We Ok(()) anyway
     // match runner.try_wait() {
     //     Ok(Some(status)) => println!("Medusa has finished with status: {}", status),
     //     Ok(None) => println!("Medusa has not finished yet"),
@@ -167,4 +208,61 @@ fn test_extract_property_name_invalid_prop() {
     let runner = MedusaRunner::new();
     let test_line = "⇾ [FAILED] Assertion Test: prop_anyoneCanIncreaseFundInAPool()";
     assert_eq!(runner.extract_property_name(test_line), None);
+}
+
+#[test]
+fn test_get_unique_name() {
+    let mut runner = MedusaRunner::new();
+    let test_line = "prop_anyoneCanIncreaseFundInAPool";
+    let _ = runner.get_unique_name(test_line.to_string());
+
+    assert_eq!(
+        runner.get_unique_name(test_line.to_string()),
+        "prop_anyoneCanIncreaseFundInAPool2"
+    );
+}
+
+#[test]
+fn test_get_unique_name_multiple() {
+    let mut runner = MedusaRunner::new();
+    let test_line = "prop_anyoneCanIncreaseFundInAPool";
+    let _ = runner.get_unique_name(test_line.to_string());
+
+    for i in 0..10 {
+        assert_eq!(
+            runner.get_unique_name(test_line.to_string()),
+            format!("prop_anyoneCanIncreaseFundInAPool{}", i + 2)
+        );
+    }
+}
+
+#[test]
+fn test_get_unique_name_prop_with_number() {
+    let mut runner = MedusaRunner::new();
+    let test_line = "prop_anyoneCanIncreaseFundInAPool9";
+
+    assert_eq!(
+        runner.get_unique_name(test_line.to_string()),
+        "prop_anyoneCanIncreaseFundInAPool9"
+    );
+
+    assert_eq!(
+        runner.get_unique_name(test_line.to_string()),
+        "prop_anyoneCanIncreaseFundInAPool92"
+    );
+}
+
+#[test]
+fn test_parse_cheat_data() {
+    let mut runner = MedusaRunner::new();
+    let test_line = "1) FuzzTest.property_canAlwaysCreateRequest(uint256,uint256)(1, 1) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
+
+
+    println!("{:?}", runner.parse_cheats_data(test_line.to_string()));
+
+    // assert_eq!(
+    //     runner.parse_cheats_data(test_line.to_string()),
+    //     "prop_anyoneCanIncreaseFundInAPool9"
+    // );
+
 }
