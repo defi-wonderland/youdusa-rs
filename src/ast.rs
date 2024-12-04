@@ -12,6 +12,7 @@ pub enum Ast {
 pub struct Function {
     name: String,
     visibility: Visibility,
+    value: i32,
     arguments: Vec<Argument>,
     return_type: Type,
     children: Vec<Ast>,
@@ -23,6 +24,7 @@ impl Function {
         Self {
             name: name.to_string(),
             visibility: Visibility::Public,
+            value: 0,
             arguments: Vec::new(),
             return_type: Type::None,
             children: Vec::new(),
