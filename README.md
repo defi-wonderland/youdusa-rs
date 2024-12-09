@@ -1,5 +1,12 @@
 This tool handles a Medusa execution and, if a property fails, generate a foundry test for the corresponding call sequence.
 
+`youdusa run` start a medusa fuzz campaign (+ opt arbs- todo), generating foundry tests on the fly. Warning, sometimes medusa don't log a failing sequence and instead just stops fuzzing... (todo: handle sighint -> send sigint to medusa, gen tests, and exit)
+
+todo:
+`youdusa open` generate reproducer based on a stdout log of a previous execution (easiest is to indicate a log dir in the medusa.json, which will duplicate the ouput - alternative is redirecting stdout to a file)
+
+todo:
+compatible with Echidna too
 
 Example:
 ```markdown
