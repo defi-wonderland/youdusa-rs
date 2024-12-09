@@ -4,27 +4,27 @@
 /// Only the relevant part of Solidity semantics is implemented
 /// Excluded (place-holdered if needed in the future): Expressions (function calls are represented as pure statement, as we don't get
 /// their returned values), Other types, Other statements
+#[derive(Debug, PartialEq)]
 pub enum Ast {
-    Function(Function), // Fn declaration, this is the root
+    FunctionDeclaration(FunctionDeclaration), // Fn declaration, this is the root
     Statement(Statement),
 }
 
-pub struct Function {
+#[derive(Debug, PartialEq)]
+pub struct FunctionDeclaration {
     name: String,
     visibility: Visibility,
-    value: i32,
     arguments: Vec<Argument>,
     return_type: Type,
     children: Vec<Ast>,
 }
 
-impl Function {
+impl FunctionDeclaration {
     // todo: builder?
     pub fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
             visibility: Visibility::Public,
-            value: 0,
             arguments: Vec::new(),
             return_type: Type::None,
             children: Vec::new(),
@@ -38,8 +38,13 @@ impl Function {
             .trim_end_matches(|x: char| x.is_digit(10))
             .to_string();
     }
+
+    pub fn add_child(&mut self, child: Ast) {
+        self.children.push(child);
+    }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum Visibility {
     Public,
     Private,
@@ -47,11 +52,13 @@ pub enum Visibility {
     External,
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Argument {
     name: String,
     type_: Type,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum Type {
     None,
     Uint256,
@@ -74,6 +81,7 @@ impl Type {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum Statement {
     Prank(FunctionCall),
     Roll(FunctionCall),
@@ -81,7 +89,53 @@ pub enum Statement {
     ContractCall(FunctionCall),
 }
 
+impl Statement {
+    pub fn new_prank(pranked_address: &str) -> Self {
+        Self::Prank(FunctionCall {
+            external_contract: Some("vm".to_string()),
+            function_name: "prank".to_string(),
+            value: None,
+            arguments: vec![pranked_address.to_string()],
+        })
+    }
+
+    pub fn new_roll(block_to_roll: i32) -> Self {
+        Self::Roll(FunctionCall {
+            external_contract: Some("vm".to_string()),
+            function_name: "roll".to_string(),
+            value: None,
+            arguments: vec![block_to_roll.to_string()],
+        })
+    }
+
+    pub fn new_warp(timestamp_to_warp_to: i32) -> Self {
+        Self::Warp(FunctionCall {
+            external_contract: Some("vm".to_string()),
+            function_name: "warp".to_string(),
+            value: None,
+            arguments: vec![timestamp_to_warp_to.to_string()],
+        })
+    }
+
+    pub fn new_contract_call(
+        external_contract: Option<String>,
+        function_name: String,
+        value: Option<i32>,
+        arguments: Vec<String>,
+    ) -> Self {
+        Self::ContractCall(FunctionCall {
+            external_contract,
+            function_name,
+            value,
+            arguments,
+        })
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct FunctionCall {
-    target: String,
+    external_contract: Option<String>,
+    function_name: String,
+    value: Option<i32>,
     arguments: Vec<String>,
 }
