@@ -1,16 +1,16 @@
 use crate::parser::Parser;
 
-use anyhow::{Context};
+use anyhow::Context;
 use std::io::{BufRead, BufReader, Read};
 
 pub struct Reader {
-    buffer: BufReader<Box<dyn Read>>
+    buffer: BufReader<Box<dyn Read>>,
 }
 
 impl Reader {
     pub fn new(flux: Box<dyn Read>) -> Self {
         Self {
-            buffer: BufReader::new(flux)
+            buffer: BufReader::new(flux),
         }
     }
 
@@ -27,6 +27,6 @@ impl Reader {
             // If a complete function is pending, write it to the target contract
             parser.write_buffer_if_needed().context("IO Error")?; // todo: add log "one test written to.."
         }
-    Ok(())
+        Ok(())
     }
 }
