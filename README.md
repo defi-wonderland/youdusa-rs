@@ -1,14 +1,22 @@
-This tool handles a Medusa execution and, if a property fails, generate a foundry test for the corresponding call sequence.
+This tool generate a foundry test for failling call sequences of a Medusa fuzz campaign.
 
-`youdusa run` start a medusa fuzz campaign (+ opt arbs- todo), generating foundry tests on the fly. Warning, sometimes medusa don't log a failing sequence and instead just stops fuzzing... (todo: handle sighint -> send sigint to medusa, gen tests, and exit)
+## Installation
+```bash
+cargo install --git https://github.com/defi-wonderland/youdusa-rs
+```
 
-todo:
-`youdusa open` generate reproducer based on a stdout log of a previous execution (easiest is to indicate a log dir in the medusa.json, which will duplicate the ouput - alternative is redirecting stdout to a file)
+## Usage
+Either pipe the output of medusa fuzz (it will still log it to your console too):
+```bash
+medusa fuzz | youdusa
+```
 
-todo:
-compatible with Echidna too
+or using a file:
+```bash
+youdusa --file log.txt
+```
 
-Example:
+## Example:
 ```markdown
 (...)
 ⇾ [FAILED] Assertion Test: FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)
@@ -20,7 +28,7 @@ Test for method "FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)" re
 (...)
 ```
 
-parsed and append at the end of the FuzzTest.t.sol contract:
+generates the following test function:
 ```solidity
 function test_prop_anyoneCanIncreaseFundInAPool_1() public {
     vm.prank(0x0000000000000000000000000000000000050000);
