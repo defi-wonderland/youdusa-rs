@@ -1,5 +1,6 @@
+use crate::ast::{Ast, FunctionDeclaration, Statement};
+use crate::emitter::Emitter;
 use crate::parser::Parser;
-
 use anyhow::Context;
 use std::io::{BufRead, BufReader, Read};
 
@@ -14,7 +15,7 @@ impl Reader {
         }
     }
 
-    pub fn parse(self) -> anyhow::Result<()> {
+    pub fn parse(self) -> anyhow::Result<Option<Vec<Ast>>> {
         let mut parser = Parser::new();
 
         for line in self.buffer.lines() {
@@ -23,10 +24,8 @@ impl Reader {
                     .process_line(line)
                     .context("Error: Failed to process line")?;
             }
-
-            // If a complete function is pending, write it to the target contract
-            parser.write_buffer_if_needed().context("IO Error")?; // todo: add log "one test written to.."
         }
-        Ok(())
+
+        Ok(parser.get_reproducers())
     }
 }

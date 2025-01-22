@@ -1,5 +1,5 @@
 use crate::ast::{Ast, FunctionDeclaration, Statement};
-use crate::emitter;
+use crate::emitter::Emitter;
 use crate::types::CheatsData;
 
 use anyhow::{Context, Result};
@@ -11,11 +11,11 @@ pub struct Parser {
     /// Hashmap of the number of occurence a proprty fn has been seen
     unique_function_counter: HashMap<String, i32>,
 
-    /// Complete function, waiting to be written
-    ast_writing_buffer: Option<Ast>,
-
     /// The current test function being filled
     current_ast_root: Option<Ast>,
+
+    /// All the AST to emit later on
+    reproducers: Vec<Ast>,
 }
 
 impl Parser {
@@ -29,27 +29,23 @@ impl Parser {
             self.add_new_call_to_ast(line)
                 .context("failed to add new call to ast")?;
         } else if line.contains("[Execution Trace]") {
-            self.finalize_ast();
+            if let Some(ast) = self.current_ast_root.take() {
+                self.reproducers.push(ast);
+            }
         }
+
         Ok(())
     }
 
-    /// If there is a function in the buffer, write it and clear the buffer
-    pub fn write_buffer_if_needed(&mut self) -> Result<()> {
-        if let Some(ast_to_emit) = &self.ast_writing_buffer {
-            emitter::emit(ast_to_emit).context("Error: Failed to emit solidity")?;
-
-            self.ast_writing_buffer = None;
-        }
-
-        Ok(())
+    pub fn get_reproducers(self) -> Option<Vec<Ast>> {
+        (!self.reproducers.is_empty()).then_some(self.reproducers)
     }
 
     pub fn new() -> Self {
         Self {
             unique_function_counter: HashMap::new(),
-            ast_writing_buffer: None,
             current_ast_root: None,
+            reproducers: Vec::new(),
         }
     }
 
@@ -94,14 +90,6 @@ impl Parser {
     fn create_new_ast(&mut self, name: String) {
         let new_fn = Ast::FunctionDeclaration(FunctionDeclaration::new(&name));
         self.current_ast_root = Some(new_fn);
-    }
-
-    /// Push the temp ast to the reproducer vec, then void the current pending ast
-    fn finalize_ast(&mut self) {
-        if let Some(ast) = self.current_ast_root.take() {
-            self.ast_writing_buffer = Some(ast);
-            self.current_ast_root = None;
-        }
     }
 
     /// Parse the line to extract the block height, msg sender, timestamp, fn name and its arguments, then

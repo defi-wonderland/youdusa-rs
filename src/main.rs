@@ -9,6 +9,7 @@ use clap::Parser;
 use std::fs::File;
 use std::io::{self, IsTerminal, Read};
 
+use crate::emitter::Emitter;
 use crate::reader::Reader;
 
 #[derive(Parser)]
@@ -30,7 +31,15 @@ fn main() -> anyhow::Result<()> {
     };
 
     let reader = Reader::new(input);
-    reader.parse().context("Error: Failed to parse")?;
+    let ast = reader.parse().context("Error: Failed to parse")?;
+
+    if let Some(ast_to_emit) = ast {
+        for ast in ast_to_emit {
+            let mut emitter = Emitter::new();
+            emitter.emit(&ast)?;
+            println!("{}", emitter.get_emitted());
+        }
+    }
 
     Ok(())
 }
