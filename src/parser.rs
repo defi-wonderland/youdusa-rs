@@ -230,7 +230,7 @@ mod tests {
         "1) FuzzTest.prop_alloOwnerCanAlwaysChangePercentFee(uint256)(15056796) (block=10429, time=19960, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000050000)";
 
         // We need a valid parent first
-       parser.process_line("⇾ [FAILED] Assertion Test: FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)".to_string()).expect("setup fail");
+        parser.process_line("⇾ [FAILED] Assertion Test: FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)".to_string()).expect("setup fail");
 
         assert!(parser.process_line(test_line.to_string()).is_ok());
     }
