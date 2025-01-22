@@ -1,11 +1,12 @@
 use crate::ast::{Ast, FunctionDeclaration, Statement};
 use crate::types::CheatsData;
+use crate::emitter;
 
 use anyhow::{Context, Result};
 use std::collections::HashMap;
-use std::path::PathBuf;
 
 /// Define how to go from the raw stdio ouput to a complete ast
+#[derive(Debug)]
 pub struct Parser {
     /// Hashmap of the number of occurence a proprty fn has been seen
     unique_function_counter: HashMap<String, i32>,
@@ -27,17 +28,17 @@ impl Parser {
         } else if line.chars().next().map(|c| c.is_numeric()).unwrap_or(false) {
             self.add_new_call_to_ast(line)
                 .context("failed to add new call to ast")?;
-        } else if line.contains("Execution Trace") {
+        } else if line.contains("[Execution Trace]") {
             self.finalize_ast();
         }
-
         Ok(())
     }
 
     /// If there is a function in the buffer, write it and clear the buffer
-    pub fn write_buffer_if_needed(&mut self, path: &PathBuf) -> Result<()> {
-        if self.ast_writing_buffer.is_some() {
-            // todo write to file
+    pub fn write_buffer_if_needed(&mut self) -> Result<()> {
+        if let Some(ast_to_emit) = &self.ast_writing_buffer {
+            emitter::emit(ast_to_emit).context("Error: Failed to emit solidity")?;
+
             self.ast_writing_buffer = None;
         }
 
@@ -83,9 +84,9 @@ impl Parser {
         *counter += 1;
 
         if *counter > 1 {
-            format!("{}{}", name, counter)
+            format!("test_{}{}", name, counter)
         } else {
-            name
+            format!("test_{}", name)
         }
     }
 
@@ -97,7 +98,7 @@ impl Parser {
 
     /// Push the temp ast to the reproducer vec, then void the current pending ast
     fn finalize_ast(&mut self) {
-        if let Some(ast) = self.current_ast_root.take() {
+        if let Some(ast) = self.current_ast_root.take() { 
             self.ast_writing_buffer = Some(ast);
             self.current_ast_root = None;
         }
@@ -180,13 +181,13 @@ impl Parser {
     }
 
     /// Parse the arguments of a given function call
-    /// "property_foo(1, 2, 3)" returns \["1", "2", "3"\]
+    /// "property_foo(uint,uint,uint)(1, 2, 3)" returns \["1", "2", "3"\]
     fn parse_function_call_args(&self, line: &str) -> Result<Vec<String>> {
-        // split around the first "(..)" block, then split after each ","
+        // split around the second "(..)" block, then split after each ","
         // Medusa skips the empty bytes, we re-add then (as empty '')
         Ok(line
             .split('(')
-            .nth(1)
+            .nth(2)
             .ok_or_else(|| anyhow::anyhow!("missing ("))?
             .split(')')
             .nth(0)

@@ -1,21 +1,37 @@
-use anyhow::{Context, Result};
-
 mod ast;
 mod medusa_json;
 mod parser;
-mod runner;
+mod reader;
 mod types;
+mod emitter;
 
-// TODO: take a file in instead (sometimes Medusa doesn't log a failing sequence
-// before exiting, for unknown reason)
+use anyhow::Context;
+use std::io::{self, IsTerminal, Read};
+use std::fs::File;
+use clap::Parser;
 
-// TODO: handle sigint and exit gracefully (first Medusa, then write if needed, then Youdusa)
+use crate::reader::Reader;
 
-fn main() -> Result<()> {
-    let path_to_entry = medusa_json::get_entry_point_path("medusa.json")
-        .context("failed to process medusa config")?;
+#[derive(Parser)]
+#[command(author, version, about)]
+struct Args {
+    #[arg(short, long)]
+    file: Option<String>
+}
 
-    runner::run(path_to_entry).context("Youdusa Error")?;
+fn main() -> anyhow::Result<()> {
+    let stdin = io::stdin();
+    let args = Args::parse();
+
+    let input: Box<dyn Read + 'static> = if !stdin.is_terminal() {
+        Box::new(io::stdin())
+    } else {
+        // todo: error 
+        Box::new(File::open(args.file.unwrap_or_default())?)
+    };
+
+    let reader = Reader::new(input);
+    reader.parse().context("Error: Failed to parse") ?;
 
     Ok(())
 }

@@ -42,6 +42,14 @@ impl FunctionDeclaration {
     pub fn add_child(&mut self, child: Ast) {
         self.children.push(child);
     }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn children(&self) -> &[Ast] {
+        &self.children
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -83,15 +91,12 @@ impl Type {
 
 #[derive(Debug, PartialEq)]
 pub enum Statement {
-    Prank(FunctionCall),
-    Roll(FunctionCall),
-    Warp(FunctionCall),
     ContractCall(FunctionCall),
 }
 
 impl Statement {
     pub fn new_prank(pranked_address: &str) -> Self {
-        Self::Prank(FunctionCall {
+        Self::ContractCall(FunctionCall {
             external_contract: Some("vm".to_string()),
             function_name: "prank".to_string(),
             value: None,
@@ -100,7 +105,7 @@ impl Statement {
     }
 
     pub fn new_roll(block_to_roll: i32) -> Self {
-        Self::Roll(FunctionCall {
+        Self::ContractCall(FunctionCall {
             external_contract: Some("vm".to_string()),
             function_name: "roll".to_string(),
             value: None,
@@ -109,7 +114,7 @@ impl Statement {
     }
 
     pub fn new_warp(timestamp_to_warp_to: i32) -> Self {
-        Self::Warp(FunctionCall {
+        Self::ContractCall(FunctionCall {
             external_contract: Some("vm".to_string()),
             function_name: "warp".to_string(),
             value: None,
@@ -134,8 +139,8 @@ impl Statement {
 
 #[derive(Debug, PartialEq)]
 pub struct FunctionCall {
-    external_contract: Option<String>,
-    function_name: String,
-    value: Option<i32>,
-    arguments: Vec<String>,
+    pub external_contract: Option<String>,
+    pub function_name: String,
+    pub value: Option<i32>,
+    pub arguments: Vec<String>,
 }
