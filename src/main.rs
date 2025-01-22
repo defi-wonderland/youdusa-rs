@@ -1,13 +1,13 @@
 mod ast;
+mod emitter;
 mod parser;
 mod reader;
 mod types;
-mod emitter;
 
 use anyhow::Context;
-use std::io::{self, IsTerminal, Read};
-use std::fs::File;
 use clap::Parser;
+use std::fs::File;
+use std::io::{self, IsTerminal, Read};
 
 use crate::reader::Reader;
 
@@ -15,7 +15,7 @@ use crate::reader::Reader;
 #[command(author, version, about)]
 struct Args {
     #[arg(short, long)]
-    file: Option<String>
+    file: Option<String>,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -25,12 +25,12 @@ fn main() -> anyhow::Result<()> {
     let input: Box<dyn Read + 'static> = if !stdin.is_terminal() {
         Box::new(io::stdin())
     } else {
-        // todo: error 
+        // todo: error
         Box::new(File::open(args.file.unwrap_or_default())?)
     };
 
     let reader = Reader::new(input);
-    reader.parse().context("Error: Failed to parse") ?;
+    reader.parse().context("Error: Failed to parse")?;
 
     Ok(())
 }

@@ -1,12 +1,11 @@
+use crate::ast::{Ast, FunctionCall, FunctionDeclaration, Statement};
 /// Take an ast and create the corresponding solidity code
 use anyhow::Result;
-use crate::ast::{Ast, FunctionDeclaration, Statement, FunctionCall};
-
 
 pub fn emit(ast: &Ast) -> Result<()> {
     match ast {
         Ast::FunctionDeclaration(fn_declaration) => emit_function(fn_declaration),
-        Ast::Statement(statement) => emit_statement(statement) 
+        Ast::Statement(statement) => emit_statement(statement),
     }
 
     Ok(())
@@ -18,7 +17,7 @@ fn emit_function(fn_declaration: &FunctionDeclaration) {
     for child in fn_declaration.children() {
         match child {
             Ast::Statement(statement) => emit_statement(statement),
-            Ast::FunctionDeclaration(fn_declaration) => emit_function(fn_declaration)
+            Ast::FunctionDeclaration(fn_declaration) => emit_function(fn_declaration),
         }
     }
 
@@ -27,7 +26,7 @@ fn emit_function(fn_declaration: &FunctionDeclaration) {
 
 fn emit_statement(statement: &Statement) {
     match statement {
-        Statement::ContractCall(contract_call) => emit_contract_call(contract_call)
+        Statement::ContractCall(contract_call) => emit_contract_call(contract_call),
     }
 }
 
@@ -46,7 +45,7 @@ fn emit_contract_call(contract_call: &FunctionCall) {
             add_new_line = true;
         }
     }
-    
+
     call_to_construct.push_str(&contract_call.function_name);
 
     if let Some(value) = &contract_call.value {
