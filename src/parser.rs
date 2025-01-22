@@ -128,7 +128,7 @@ impl Parser {
                     cheats_data.timestamp_to_warp_to,
                 )));
                 function_root.add_child(Ast::Statement(Statement::new_prank(
-                    &*cheats_data.caller_to_prank,
+                    &cheats_data.caller_to_prank,
                 )));
                 function_root.add_child(Ast::Statement(property_call));
             }
