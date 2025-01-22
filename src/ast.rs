@@ -35,7 +35,7 @@ impl FunctionDeclaration {
     pub fn get_common_name(&self) -> String {
         return self
             .name
-            .trim_end_matches(|x: char| x.is_digit(10))
+            .trim_end_matches(|x: char| x.is_ascii_digit())
             .to_string();
     }
 

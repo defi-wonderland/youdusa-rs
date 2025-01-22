@@ -22,7 +22,7 @@ fn emit_function(fn_declaration: &FunctionDeclaration) {
         }
     }
 
-    println!("}}");
+    println!("}}\n");
 }
 
 fn emit_statement(statement: &Statement) {

@@ -1,5 +1,4 @@
 mod ast;
-mod medusa_json;
 mod parser;
 mod reader;
 mod types;
