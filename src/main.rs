@@ -19,6 +19,10 @@ struct Args {
     file: Option<String>,
 }
 
+/// Take a Medusa trace as input, parse it and create Foundry
+/// reproducer function for every failing properties
+/// 
+/// version: early mvp
 fn main() -> anyhow::Result<()> {
     let stdin = io::stdin();
     let args = Args::parse();
@@ -26,7 +30,7 @@ fn main() -> anyhow::Result<()> {
     let input: Box<dyn Read + 'static> = if !stdin.is_terminal() {
         Box::new(io::stdin())
     } else {
-        // todo: error
+        // todo: error instead of default
         Box::new(File::open(args.file.unwrap_or_default())?)
     };
 
@@ -37,7 +41,7 @@ fn main() -> anyhow::Result<()> {
         for ast in ast_to_emit {
             let mut emitter = Emitter::new();
             emitter.emit(&ast)?;
-            println!("{}", emitter.get_emitted());
+            println!("{}", emitter.get_emitted()); // for now, we log the reproducers
         }
     }
 
