@@ -31,8 +31,10 @@ fn main() -> anyhow::Result<()> {
         Box::new(io::stdin())
     } else {
         // file provided
-        // todo: error instead of default (ie no pipe and no file)
-        Box::new(File::open(args.file.unwrap_or_default())?)
+        match &args.file {
+            Some(file) => Box::new(File::open(file).context("Failed to open input file")?),
+            None => anyhow::bail!("No input provided. Either pipe input or use --file option"),
+        }
     };
 
     // build the ast
