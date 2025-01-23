@@ -242,9 +242,20 @@ mod tests {
         let mut parser = Parser::new();
         let test_line = "[Execution Trace]";
 
-        assert!(parser.process_line(test_line.to_string()).is_ok());
-    }
+        assert!(parser.process_line("⇾ [FAILED] Assertion Test: FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)".to_string()).is_ok());
 
+        assert!(parser.process_line(test_line.to_string()).is_ok());
+        assert_eq!(
+            parser.reproducers,
+            vec![Ast::FunctionDeclaration(FunctionDeclaration::new(
+                "test_prop_anyoneCanIncreaseFundInAPool"
+            ))]
+        );
+        assert_eq!(
+            parser.current_ast_root,
+            None
+        );
+    }
 
     #[test]
     fn test_extract_property_name_classic() {
