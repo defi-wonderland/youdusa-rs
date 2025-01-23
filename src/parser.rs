@@ -2,7 +2,7 @@ use crate::ast::{Ast, FunctionDeclaration, Statement};
 use crate::emitter::Emitter;
 use crate::types::CheatsData;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Ok, Result};
 use std::collections::HashMap;
 
 /// Define how to go from the raw stdio ouput to a complete ast
@@ -169,25 +169,27 @@ impl Parser {
 
     /// Parse the arguments of a given function call
     /// "property_foo(uint,uint,uint)(1, 2, 3)" returns \["1", "2", "3"\]
+    /// this needs to handle hedge case like nested tuples/struct
     fn parse_function_call_args(&self, line: &str) -> Result<Vec<String>> {
-        // split around the second "(..)" block, then split after each ","
-        // Medusa skips the empty bytes, we re-add then (as empty '')
-        Ok(line
-            .split('(')
-            .nth(2)
-            .ok_or_else(|| anyhow::anyhow!("missing ("))?
-            .split(')')
-            .nth(0)
-            .ok_or_else(|| anyhow::anyhow!("missing )"))?
-            .split(',')
-            .map(|arg| {
-                if arg.trim().is_empty() {
-                    "\'\'".to_string()
-                } else {
-                    arg.to_string()
-                }
-            })
-            .collect::<Vec<String>>())
+        // TODO: we should parse and treat them as single element, including
+        // nested tuples. For now, processed as a single block
+
+        // discard the first half of parenthesis blocks, as these are the types
+        let count = line.chars().filter(|c| *c == '(').count();
+        let split_args = line
+            .match_indices('(')
+            .nth(count / 2)
+            .map(|(index, _)| line.split_at(index));
+
+        // empty bytes needs to be replaced with ''
+        let values_fixed = split_args
+            .unwrap_or_default()
+            .1
+            .to_string()
+            .replace(",,", ",'',")
+            .replace(",)", ",'')");
+
+        Ok(vec![values_fixed])
     }
 }
 
