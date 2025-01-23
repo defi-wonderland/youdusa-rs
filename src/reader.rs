@@ -18,7 +18,8 @@ impl Reader {
         let mut parser = Parser::new();
 
         for line in self.buffer.lines().map_while(Result::ok) {
-            parser.process_line(line)
+            parser
+                .process_line(line)
                 .context("Error: Failed to process line")?;
         }
 

@@ -45,7 +45,9 @@ fn main() -> anyhow::Result<()> {
     if let Some(ast_to_emit) = ast {
         for ast in ast_to_emit {
             let mut emitter = Emitter::new();
-            emitter.emit(&ast).context("Error: Failed to create solidity function")?;
+            emitter
+                .emit(&ast)
+                .context("Error: Failed to create solidity function")?;
             println!("{}", emitter.get_emitted()); // for now, we stdout the reproducers
         }
     }
