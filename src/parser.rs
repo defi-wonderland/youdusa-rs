@@ -189,7 +189,12 @@ impl Parser {
             .replace(",,", ",'',")
             .replace(",)", ",'')");
 
-        Ok(vec![values_fixed])
+        // Remove the last parenthesis block (the cheatcodes)
+        let res = values_fixed.rfind(" (")
+                .map_or(values_fixed.as_str(), |i| &values_fixed[..i])
+                .to_string();
+
+        Ok(vec![res.trim_start_matches("(").trim_end_matches(")").to_string()])
     }
 }
 
