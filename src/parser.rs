@@ -14,7 +14,7 @@ pub struct Parser {
     /// The current solidity test function being build
     current_ast_root: Option<Ast>,
 
-    /// All the ast already produced
+    /// All the ast already produced and finished
     reproducers: Vec<Ast>,
 }
 
