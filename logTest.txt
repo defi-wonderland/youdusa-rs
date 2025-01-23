@@ -11,6 +11,6 @@ l;kjasdf
 Test for method "FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)" resulted in an assertion failure after the following call sequence:
 [Call Sequence]
 1) FuzzTest.prop_alloOwnerCanAlwaysChangePercentFee(uint256)(15056796) (block=10429, time=19960, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000050000)
-2) FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256,bytes)(13441534537036768485200417184756697876915712920751763869415731560796441041418, 334437,) (block=34180, time=321741, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000070000)
+2) FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256,(uint256,uint256),bytes)(23, 334437, (1, 2),) (block=34180, time=321741, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000070000)
 [Execution Trace]
 ...
