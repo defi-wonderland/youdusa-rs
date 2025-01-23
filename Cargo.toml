@@ -1,7 +1,7 @@
 [package]
 authors = ["Wonderland"]
 name = "youdusa-rs"
-description = "Handle Medusa fuzzing and generate forge tests for failed properties"
+description = "Take a Medusa trace as input, parse it and create Foundry reproducer function for every failing properties"
 version = "0.0.1"
 edition = "2021"
 repository = "https://github.com/defi-wonderland/youdusa-rs"
@@ -16,7 +16,3 @@ clap = { version = "4.5.21", features = ["derive"] }
 serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.133"
 env_logger = "0.10"
-
-[lints.rust]
-dead_code = "allow"
-unused_variables = "allow"
