@@ -74,7 +74,6 @@ impl Parser {
     /// Add a "test" prefix and a number suffix to a property name
     /// and track the number of occurences of this property
     fn get_unique_name(&mut self, name: String) -> String {
-
         let counter = self
             .unique_function_counter
             .entry(name.clone())
