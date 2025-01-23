@@ -238,6 +238,15 @@ mod tests {
     }
 
     #[test]
+    fn test_process_line_end_sequence() {
+        let mut parser = Parser::new();
+        let test_line = "[Execution Trace]";
+
+        assert!(parser.process_line(test_line.to_string()).is_ok());
+    }
+
+
+    #[test]
     fn test_extract_property_name_classic() {
         let parser = Parser::new();
         let test_line =
