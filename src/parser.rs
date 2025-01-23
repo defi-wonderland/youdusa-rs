@@ -224,6 +224,15 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_process_line_only_new_failure() {
+        let mut parser = Parser::new();
+        let test_line = "⇾ [FAIL] Foo";
+
+        assert!(parser.process_line(test_line.to_string()).is_ok());
+        assert_eq!(parser.current_ast_root, None);
+    }
+
     ///@todo assert the content
     #[test]
     fn test_process_line_add_from_sequence() {
@@ -251,9 +260,22 @@ mod tests {
                 "test_prop_anyoneCanIncreaseFundInAPool"
             ))]
         );
+        assert_eq!(parser.current_ast_root, None);
+    }
+
+    #[test]
+    fn test_create_new_ast_root_creates() {
+        let mut parser = Parser::new();
+        let test_line =
+            "⇾ [FAILED] Assertion Test: FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)";
+
+        parser.create_new_ast_root(test_line);
+
         assert_eq!(
             parser.current_ast_root,
-            None
+            Some(Ast::FunctionDeclaration(FunctionDeclaration::new(
+                "test_prop_anyoneCanIncreaseFundInAPool"
+            )))
         );
     }
 

@@ -17,7 +17,9 @@ impl Emitter {
     /// Emit the solidity code from an Youdusa ast
     pub fn emit(&mut self, ast: &Ast) -> Result<()> {
         match ast {
-            Ast::FunctionDeclaration(fn_declaration) => self.emit_function_declaration(fn_declaration),
+            Ast::FunctionDeclaration(fn_declaration) => {
+                self.emit_function_declaration(fn_declaration)
+            }
             Ast::Statement(statement) => self.emit_statement(statement),
         }
 
@@ -37,7 +39,9 @@ impl Emitter {
         for child in fn_declaration.children() {
             match child {
                 Ast::Statement(statement) => self.emit_statement(statement),
-                Ast::FunctionDeclaration(fn_declaration) => self.emit_function_declaration(fn_declaration),
+                Ast::FunctionDeclaration(fn_declaration) => {
+                    self.emit_function_declaration(fn_declaration)
+                }
             }
         }
 
@@ -50,7 +54,7 @@ impl Emitter {
         }
     }
 
-    /// Emit a call (used for any internal or external function call) 
+    /// Emit a call (used for any internal or external function call)
     /// `target.foo{ value: X }(a, b, c);`
     fn emit_contract_call(&mut self, contract_call: &FunctionCall) {
         let mut call_to_construct = String::new();
@@ -71,7 +75,7 @@ impl Emitter {
 
         // Add the function call
         call_to_construct.push_str(&contract_call.function_name);
-        
+
         // Add a { value: X } if needed
         if let Some(value) = &contract_call.value {
             call_to_construct.push_str(&format!("{{ value: {} }}", value));

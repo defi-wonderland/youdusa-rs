@@ -7,7 +7,7 @@ use std::io::{BufRead, BufReader, Read};
 pub struct Reader {
     buffer: BufReader<Box<dyn Read>>,
 }
- 
+
 impl Reader {
     pub fn new(flux: Box<dyn Read>) -> Self {
         Self {
