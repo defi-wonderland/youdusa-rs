@@ -3,10 +3,11 @@ use crate::parser::Parser;
 use anyhow::Context;
 use std::io::{BufRead, BufReader, Read};
 
+/// Wrapper around input sources implementing Read trait
 pub struct Reader {
     buffer: BufReader<Box<dyn Read>>,
 }
-
+ 
 impl Reader {
     pub fn new(flux: Box<dyn Read>) -> Self {
         Self {
