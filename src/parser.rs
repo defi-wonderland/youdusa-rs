@@ -25,7 +25,7 @@ impl Parser {
     /// "Execution Trace" ends the current trace (push the current ast with the finished ones)
     pub fn process_line(&mut self, line: String) -> Result<()> {
         if line.contains("FAILED") {
-            self.process_failed_assertion(&line);
+            self.create_new_ast_root(&line);
         } else if line.chars().next().map(|c| c.is_numeric()).unwrap_or(false) {
             self.add_new_call_to_ast(line)
                 .context("failed to add new call to ast")?;
@@ -52,9 +52,9 @@ impl Parser {
     }
 
     /// Start processing a new failed assertion, as a new ast
-    fn process_failed_assertion(&mut self, line: &str) {
+    fn create_new_ast_root(&mut self, line: &str) {
         if let Some(name) = self.extract_property_name(line) {
-            let unique_name = self.get_unique_name(name);
+            let unique_name = self.generate_unique_test_name(name);
             self.create_new_ast(unique_name);
         }
     }
@@ -73,7 +73,7 @@ impl Parser {
 
     /// Add a "test" prefix and a number suffix to a property name
     /// and track the number of occurences of this property
-    fn get_unique_name(&mut self, name: String) -> String {
+    fn generate_unique_test_name(&mut self, name: String) -> String {
         let counter = self
             .unique_function_counter
             .entry(name.clone())
@@ -101,11 +101,12 @@ impl Parser {
             .parse_cheats_data(line.clone())
             .context("failed to parse call params")?;
 
-        // Parses out: property_canAlwaysCreateRequest{value: 0}(1, 1)
+        // Parses property_canAlwaysCreateRequest{value: 0}(1, 1)
         let property_call = self
-            .parse_property_call(line.clone(), cheats_data.value)
+            .generate_call_to_medusa_property(line.clone(), cheats_data.value)
             .context("failed to extract property to call")?;
 
+        // Add all cheatcodes then the Medusa property to call
         match &mut self.current_ast_root {
             Some(Ast::FunctionDeclaration(function_root)) => {
                 function_root.add_child(Ast::Statement(Statement::new_roll(
@@ -128,13 +129,13 @@ impl Parser {
     /// Parse the property name and create a new external call targeting 'this'
     /// @dev For now, the args are returned as a Vec containing a single String
     /// futureproof would be parse them individually, including nested struct
-    fn parse_property_call(&self, line: String, value: i32) -> Result<Statement> {
+    fn generate_call_to_medusa_property(&self, line: String, value: i32) -> Result<Statement> {
         let property_name = self
             .extract_property_name(&line)
             .ok_or_else(|| anyhow::anyhow!("Failed to extract property name"))?;
 
         let arguments = self
-            .parse_function_call_args(&line)
+            .parse_medusa_call_arguments(&line)
             .context("Failed to parse argsof property call")?;
 
         Ok(Statement::new_contract_call(
@@ -170,9 +171,11 @@ impl Parser {
     }
 
     /// Parse the arguments of a given function call
-    /// "property_foo(uint,uint,uint)(1, 2, 3, (4, 5), )" returns `1, 2, 3, (4, 5), ''`
+    /// "property_foo(uint,uint,uint)(1, 2, 3, (4, 5), )" returns "1, 2, 3, (4, 5), ''"
     /// this needs to handle hedge case like nested tuples/struct
-    fn parse_function_call_args(&self, line: &str) -> Result<Vec<String>> {
+    /// @dev Medusa returns an empty char for empty bytes, we replace it with ''
+    /// @dev Temp(?), all args are parsed as a single String (easier to handler nested tuples)
+    fn parse_medusa_call_arguments(&self, line: &str) -> Result<Vec<String>> {
         // discard the first half of parenthesis blocks, as these are the types
         let count = line.chars().filter(|c| *c == '(').count();
         let split_args = line
@@ -266,10 +269,10 @@ mod tests {
     fn test_get_unique_name() {
         let mut parser = Parser::new();
         let test_line = "prop_anyoneCanIncreaseFundInAPool";
-        let _ = parser.get_unique_name(test_line.to_string());
+        let _ = parser.generate_unique_test_name(test_line.to_string());
 
         assert_eq!(
-            parser.get_unique_name(test_line.to_string()),
+            parser.generate_unique_test_name(test_line.to_string()),
             "test_prop_anyoneCanIncreaseFundInAPool2"
         );
     }
@@ -278,11 +281,11 @@ mod tests {
     fn test_get_unique_name_multiple() {
         let mut parser = Parser::new();
         let test_line = "prop_anyoneCanIncreaseFundInAPool";
-        let _ = parser.get_unique_name(test_line.to_string());
+        let _ = parser.generate_unique_test_name(test_line.to_string());
 
         for i in 0..10 {
             assert_eq!(
-                parser.get_unique_name(test_line.to_string()),
+                parser.generate_unique_test_name(test_line.to_string()),
                 format!("test_prop_anyoneCanIncreaseFundInAPool{}", i + 2)
             );
         }
@@ -294,12 +297,12 @@ mod tests {
         let test_line = "prop_anyoneCanIncreaseFundInAPool9";
 
         assert_eq!(
-            parser.get_unique_name(test_line.to_string()),
+            parser.generate_unique_test_name(test_line.to_string()),
             "test_prop_anyoneCanIncreaseFundInAPool9"
         );
 
         assert_eq!(
-            parser.get_unique_name(test_line.to_string()),
+            parser.generate_unique_test_name(test_line.to_string()),
             "test_prop_anyoneCanIncreaseFundInAPool92"
         );
     }
