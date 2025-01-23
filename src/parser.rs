@@ -1,27 +1,28 @@
 use crate::ast::{Ast, FunctionDeclaration, Statement};
-use crate::emitter::Emitter;
 use crate::types::CheatsData;
 
 use anyhow::{Context, Ok, Result};
 use std::collections::HashMap;
 
-/// Define how to go from the raw stdio ouput to a complete ast
+/// Define how to go from the Medusa trace to a complete Youdusa ast
 #[derive(Debug)]
 pub struct Parser {
     /// Hashmap of the number of occurence a proprty fn has been seen
+    /// @dev This is used to add numbering if a same property fails multiple times
     unique_function_counter: HashMap<String, i32>,
 
-    /// The current test function being filled
+    /// The current solidity test function being build
     current_ast_root: Option<Ast>,
 
-    /// All the AST to emit later on
+    /// All the ast already produced
     reproducers: Vec<Ast>,
 }
 
 impl Parser {
-    /// Branches out based on the line content ("FAILED" creates a new function,
-    /// a numbered line is a new property function call, "Execution Trace" ends the
-    /// current trace)
+    /// Branches out based on the line content:
+    /// "FAILED" creates a ast (new property to reproduce, with correct naming),
+    /// a numbered line is a new property function call (should be included as a new call)
+    /// "Execution Trace" ends the current trace (push the current ast with the finished ones)
     pub fn process_line(&mut self, line: String) -> Result<()> {
         if line.contains("FAILED") {
             self.process_failed_assertion(&line);
@@ -37,6 +38,7 @@ impl Parser {
         Ok(())
     }
 
+    /// Return all the reproducer ast already built
     pub fn get_reproducers(self) -> Option<Vec<Ast>> {
         (!self.reproducers.is_empty()).then_some(self.reproducers)
     }
@@ -49,17 +51,17 @@ impl Parser {
         }
     }
 
-    /// if we catch a "FAILED" keyword, start processing this failed assertion
+    /// Start processing a new failed assertion, as a new ast
     fn process_failed_assertion(&mut self, line: &str) {
-        // Parse the FAILED line to get the property name then create a new AST
         if let Some(name) = self.extract_property_name(line) {
             let unique_name = self.get_unique_name(name);
             self.create_new_ast(unique_name);
         }
     }
 
-    /// Isolate a property name from the rest of the line (only keep what comes after '.' and
-    /// before '(' in "⇾ [FAILED] Assertion Test: FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)")
+    /// Isolate a property name from the rest of the line
+    /// only keep what comes after 'FuzzTest.' and before '(...' in
+    /// ⇾ [FAILED] Assertion Test: FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)
     fn extract_property_name(&self, line: &str) -> Option<String> {
         line.split('.')
             .nth(1)?
@@ -69,10 +71,10 @@ impl Parser {
             .into()
     }
 
-    /// Add a number to a property name if it already exists plus track the number of occurences of this property
-    /// (starting at 1 for a newly broken property)
+    /// Add a "test" prefix and a number suffix to a property name
+    /// and track the number of occurences of this property
     fn get_unique_name(&mut self, name: String) -> String {
-        // self mut for entry()
+
         let counter = self
             .unique_function_counter
             .entry(name.clone())
@@ -86,15 +88,14 @@ impl Parser {
         }
     }
 
-    /// Start a new ast in temp current_ast
+    /// Start building a new ast
     fn create_new_ast(&mut self, name: String) {
         let new_fn = Ast::FunctionDeclaration(FunctionDeclaration::new(&name));
         self.current_ast_root = Some(new_fn);
     }
 
-    /// Parse the line to extract the block height, msg sender, timestamp, fn name and its arguments, then
-    /// add it as new children of the current temp ast (current_ast)
-    /// example: "1) FuzzTest.property_canAlwaysCreateRequest(uint256,uint256)(1, 1) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)"
+    /// Parse the line to extract block height, msg sender, timestamp, fn name and its arguments
+    /// add them as new children of the current temp ast (as cheat codes or call to "this")
     fn add_new_call_to_ast(&mut self, line: String) -> Result<()> {
         // Parses out block, timestamp, sender, value (which we reuse later on)
         let cheats_data: CheatsData = self
@@ -126,6 +127,8 @@ impl Parser {
     }
 
     /// Parse the property name and create a new external call targeting 'this'
+    /// @dev For now, the args are returned as a Vec containing a single String
+    /// futureproof would be parse them individually, including nested struct
     fn parse_property_call(&self, line: String, value: i32) -> Result<Statement> {
         let property_name = self
             .extract_property_name(&line)
@@ -168,12 +171,9 @@ impl Parser {
     }
 
     /// Parse the arguments of a given function call
-    /// "property_foo(uint,uint,uint)(1, 2, 3)" returns \["1", "2", "3"\]
+    /// "property_foo(uint,uint,uint)(1, 2, 3, (4, 5), )" returns `1, 2, 3, (4, 5), ''`
     /// this needs to handle hedge case like nested tuples/struct
     fn parse_function_call_args(&self, line: &str) -> Result<Vec<String>> {
-        // TODO: we should parse and treat them as single element, including
-        // nested tuples. For now, processed as a single block
-
         // discard the first half of parenthesis blocks, as these are the types
         let count = line.chars().filter(|c| *c == '(').count();
         let split_args = line
@@ -195,6 +195,7 @@ impl Parser {
             .map_or(values_fixed.as_str(), |i| &values_fixed[..i])
             .to_string();
 
+        // Trim the outside parenthesis, added when emitting (ie easy transition to individual elements)
         Ok(vec![res
             .trim_start_matches("(")
             .trim_end_matches(")")

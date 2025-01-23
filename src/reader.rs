@@ -1,5 +1,4 @@
-use crate::ast::{Ast, FunctionDeclaration, Statement};
-use crate::emitter::Emitter;
+use crate::ast::Ast;
 use crate::parser::Parser;
 use anyhow::Context;
 use std::io::{BufRead, BufReader, Read};
@@ -18,12 +17,9 @@ impl Reader {
     pub fn parse(self) -> anyhow::Result<Option<Vec<Ast>>> {
         let mut parser = Parser::new();
 
-        for line in self.buffer.lines() {
-            if let Ok(line) = line {
-                parser
-                    .process_line(line)
-                    .context("Error: Failed to process line")?;
-            }
+        for line in self.buffer.lines().map_while(Result::ok) {
+            parser.process_line(line)
+                .context("Error: Failed to process line")?;
         }
 
         Ok(parser.get_reproducers())
