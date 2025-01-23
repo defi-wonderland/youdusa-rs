@@ -31,14 +31,6 @@ impl FunctionDeclaration {
         }
     }
 
-    /// Parse the name and remove any trailing digit (used when checking for duplicates)
-    pub fn get_common_name(&self) -> String {
-        return self
-            .name
-            .trim_end_matches(|x: char| x.is_ascii_digit())
-            .to_string();
-    }
-
     pub fn add_child(&mut self, child: Ast) {
         self.children.push(child);
     }
@@ -55,9 +47,6 @@ impl FunctionDeclaration {
 #[derive(Debug, PartialEq)]
 pub enum Visibility {
     Public,
-    Private,
-    Internal,
-    External,
 }
 
 #[derive(Debug, PartialEq)]
@@ -69,24 +58,6 @@ pub struct Argument {
 #[derive(Debug, PartialEq)]
 pub enum Type {
     None,
-    Uint256,
-    Address,
-    Bytes,
-    Bytes32,
-    String,
-}
-
-impl Type {
-    const fn to_string(&self) -> &'static str {
-        match self {
-            Type::None => "",
-            Type::Uint256 => "uint256",
-            Type::Address => "address",
-            Type::Bytes => "bytes memory",
-            Type::Bytes32 => "bytes32",
-            Type::String => "string memory",
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
