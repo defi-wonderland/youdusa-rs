@@ -58,7 +58,7 @@ impl Emitter {
     /// `target.foo{ value: X }(a, b, c);`
     fn emit_contract_call(&mut self, contract_call: &FunctionCall) {
         let mut call_to_construct = String::new();
-        let mut add_new_line = false; // only add a new line after an external call
+        let mut add_new_line = false; // only add a new line after non-cheatcodes call
 
         // Indent at current block level
         call_to_construct.push_str(&" ".repeat(4));
@@ -67,7 +67,9 @@ impl Emitter {
         if let Some(to_call) = &contract_call.target {
             call_to_construct.push_str(to_call.as_str());
             call_to_construct.push('.');
-            add_new_line = true;
+            if to_call != "vm" {
+                add_new_line = true;
+            }
         }
 
         // Add the function call
@@ -99,16 +101,11 @@ mod tests {
     #[test]
     fn test_emit_function_declaration() {
         let mut emitter = Emitter::new();
-        let test_function = FunctionDeclaration::new(
-            "test"
-        );
-        
+        let test_function = FunctionDeclaration::new("test");
+
         emitter.emit_function_declaration(&test_function);
 
-        assert_eq!(
-            emitter.output,
-            "function test() public {\n}\n"
-        )
+        assert_eq!(emitter.output, "function test() public {\n}\n")
     }
 
     #[test]
@@ -127,7 +124,10 @@ mod tests {
 
         assert_eq!(
             emitter.output,
-            format!("{}{}", default_indentation, "target.TestName{ value: 123 }(1,2,3);\n\n")
+            format!(
+                "{}{}",
+                default_indentation, "target.TestName{ value: 123 }(1,2,3);\n\n"
+            )
         );
     }
 
@@ -148,6 +148,26 @@ mod tests {
         assert_eq!(
             emitter.output,
             format!("{}{}", default_indentation, "TestName();\n")
+        );
+    }
+
+    #[test]
+    fn test_emit_contract_call_cheatcode_call() {
+        let mut emitter = Emitter::new();
+        let test_function = FunctionCall {
+            target: Some("vm".to_string()),
+            function_name: "TestName".to_string(),
+            value: None,
+            arguments: vec!["".to_string()],
+        };
+
+        let default_indentation = " ".repeat(4);
+
+        emitter.emit_contract_call(&test_function);
+
+        assert_eq!(
+            emitter.output,
+            format!("{}{}", default_indentation, "vm.TestName();\n")
         );
     }
 }

@@ -27,7 +27,9 @@ impl Parser {
         if line.contains("FAILED") {
             self.create_new_reproducer(&line)
                 .context("failed to parse new broken property")?;
-        } else if line.chars().next().map(|c| c.is_numeric()).unwrap_or(false) {
+        } else if line.chars().next().map(|c| c.is_numeric()).unwrap_or(false)
+            && self.current_ast_root.is_some()
+        {
             self.add_new_call_to_ast(line)
                 .context("failed to add new call to ast")?;
         } else if line.contains("[Execution Trace]") {
@@ -394,7 +396,7 @@ mod tests {
     fn test_add_new_call_to_ast() {
         let mut parser = Parser::new();
         let test_line = "1) FuzzTest.property_canAlwaysCreateRequest(uint256,uint256)(1, 1) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
-        
+
         let _ = parser.create_new_ast("test".to_string());
 
         let result = parser.add_new_call_to_ast(test_line.to_string());
@@ -406,24 +408,30 @@ mod tests {
     fn test_add_new_call_to_ast_wrong_cheats() {
         let mut parser = Parser::new();
         let test_line = "1) FuzzTest.property_canAlwaysCreateRequest(uint256,uint256)(1, 1) (block=, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
-        
+
         let _ = parser.create_new_ast("test".to_string());
 
         let result = parser.add_new_call_to_ast(test_line.to_string());
 
-        assert_eq!(result.unwrap_err().to_string(), "failed to parse call context");
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "failed to parse call context"
+        );
     }
 
     #[test]
     fn test_add_new_call_to_as_wrong_args() {
         let mut parser = Parser::new();
         let test_line = "1) property_canAlwaysCreateRequest(uint256,uint256)(1, 1) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
-        
+
         let _ = parser.create_new_ast("test".to_string());
 
         let result = parser.add_new_call_to_ast(test_line.to_string());
-        
-        assert_eq!(result.unwrap_err().to_string(), "failed to extract property to call");
+
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "failed to extract property to call"
+        );
     }
 
     //@todo generate_call_to_medusa_property and parse_cheats_data
@@ -432,44 +440,35 @@ mod tests {
     fn test_parse_medusa_call_arguments() {
         let parser = Parser::new();
         let test_line = "1) property_canAlwaysCreateRequest(uint256,uint256)(1,1) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
-        
+
         let result = parser.parse_medusa_call_arguments(test_line);
 
         assert!(result.is_ok());
 
-        assert_eq!(
-            result.unwrap()[0],
-            "1,1"
-        );
+        assert_eq!(result.unwrap()[0], "1,1");
     }
 
     #[test]
     fn test_parse_medusa_call_arguments_tuple() {
         let parser = Parser::new();
         let test_line = "1) property_canAlwaysCreateRequest(uint256,uint256,(address,uint256),address)(1,1,(0x12,1),0x12) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
-        
+
         let result = parser.parse_medusa_call_arguments(test_line);
 
         assert!(result.is_ok());
 
-        assert_eq!(
-            result.unwrap()[0],
-            "1,1,(0x12,1),0x12"
-        );
+        assert_eq!(result.unwrap()[0], "1,1,(0x12,1),0x12");
     }
 
     #[test]
     fn test_parse_medusa_call_arguments_bytes() {
         let parser = Parser::new();
         let test_line = "1) property_canAlwaysCreateRequest(uint256,bytes,(bytes,bytes,bytes),bytes)(1,,(,,),) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
-        
+
         let result = parser.parse_medusa_call_arguments(test_line);
 
         assert!(result.is_ok());
 
-        assert_eq!(
-            result.unwrap()[0],
-            "1,'',('','',''),''"
-        );
+        assert_eq!(result.unwrap()[0], "1,'',('','',''),''");
     }
 }

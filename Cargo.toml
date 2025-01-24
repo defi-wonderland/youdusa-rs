@@ -6,6 +6,10 @@ version = "0.0.1"
 edition = "2021"
 repository = "https://github.com/defi-wonderland/youdusa-rs"
 
+[lib]
+name = "youdusa"
+path = "src/lib.rs"
+
 [[bin]]
 name = "youdusa"
 path = "src/main.rs"
