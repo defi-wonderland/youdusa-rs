@@ -1,7 +1,7 @@
 use crate::ast::{Ast, FunctionDeclaration, Statement};
 use crate::types::CheatsData;
 
-use anyhow::{Context, Ok, Result};
+use anyhow::{anyhow, Context, Ok, Result};
 use std::collections::HashMap;
 
 /// Define how to go from the Medusa trace to a complete Youdusa ast
@@ -25,7 +25,8 @@ impl Parser {
     /// "Execution Trace" ends the current trace (push the current ast with the finished ones)
     pub fn process_line(&mut self, line: String) -> Result<()> {
         if line.contains("FAILED") {
-            self.create_new_ast_root(&line);
+            self.create_new_reproducer(&line)
+                .context("failed to parse new broken property")?;
         } else if line.chars().next().map(|c| c.is_numeric()).unwrap_or(false) {
             self.add_new_call_to_ast(line)
                 .context("failed to add new call to ast")?;
@@ -52,11 +53,13 @@ impl Parser {
     }
 
     /// Start processing a new failed assertion, as a new ast
-    fn create_new_ast_root(&mut self, line: &str) {
-        if let Some(name) = self.extract_property_name(line) {
-            let unique_name = self.generate_unique_test_name(name);
-            self.create_new_ast(unique_name);
-        }
+    fn create_new_reproducer(&mut self, line: &str) -> Result<()> {
+        let name = self
+            .extract_property_name(line)
+            .ok_or_else(|| anyhow!("Couldn't parse property name"))?;
+        let unique_name = self.generate_unique_test_name(name);
+        self.create_new_ast(unique_name);
+        Ok(())
     }
 
     /// Isolate a property name from the rest of the line
@@ -99,7 +102,7 @@ impl Parser {
         // Parses out block, timestamp, sender, value (which we reuse later on)
         let cheats_data: CheatsData = self
             .parse_cheats_data(line.clone())
-            .context("failed to parse call params")?;
+            .context("failed to parse call context")?;
 
         // Parses property_canAlwaysCreateRequest{value: 0}(1, 1)
         let property_call = self
@@ -189,7 +192,8 @@ impl Parser {
             .1
             .to_string()
             .replace(",,", ",'',")
-            .replace(",)", ",'')");
+            .replace(",)", ",'')")
+            .replace("(,", "('',");
 
         // Remove the last parenthesis block (the cheatcodes)
         let res = values_fixed
@@ -215,7 +219,9 @@ mod tests {
         let test_line =
         "⇾ [FAILED] Assertion Test: FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)";
 
-        assert!(parser.process_line(test_line.to_string()).is_ok());
+        let result = parser.process_line(test_line.to_string());
+
+        assert!(result.is_ok());
         assert_eq!(
             parser.current_ast_root,
             Some(Ast::FunctionDeclaration(FunctionDeclaration::new(
@@ -229,7 +235,23 @@ mod tests {
         let mut parser = Parser::new();
         let test_line = "⇾ [FAIL] Foo";
 
-        assert!(parser.process_line(test_line.to_string()).is_ok());
+        let result = parser.process_line(test_line.to_string());
+
+        assert!(result.is_ok());
+        assert_eq!(parser.current_ast_root, None);
+    }
+
+    #[test]
+    fn test_process_line_fails_invalid_property_name() {
+        let mut parser = Parser::new();
+        let test_line = "⇾ [FAILED] Foo";
+
+        let result = parser.process_line(test_line.to_string());
+
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "failed to parse new broken property"
+        );
         assert_eq!(parser.current_ast_root, None);
     }
 
@@ -243,7 +265,9 @@ mod tests {
         // We need a valid parent first
         parser.process_line("⇾ [FAILED] Assertion Test: FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)".to_string()).expect("setup fail");
 
-        assert!(parser.process_line(test_line.to_string()).is_ok());
+        let result = parser.process_line(test_line.to_string());
+
+        assert!(result.is_ok());
     }
 
     #[test]
@@ -251,9 +275,12 @@ mod tests {
         let mut parser = Parser::new();
         let test_line = "[Execution Trace]";
 
+        // valid parent
         assert!(parser.process_line("⇾ [FAILED] Assertion Test: FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)".to_string()).is_ok());
 
-        assert!(parser.process_line(test_line.to_string()).is_ok());
+        let result = parser.process_line(test_line.to_string());
+
+        assert!(result.is_ok());
         assert_eq!(
             parser.reproducers,
             vec![Ast::FunctionDeclaration(FunctionDeclaration::new(
@@ -269,13 +296,28 @@ mod tests {
         let test_line =
             "⇾ [FAILED] Assertion Test: FuzzTest.prop_anyoneCanIncreaseFundInAPool(uint256,uint256)";
 
-        parser.create_new_ast_root(test_line);
+        let result = parser.create_new_reproducer(test_line);
+
+        assert!(result.is_ok());
 
         assert_eq!(
             parser.current_ast_root,
             Some(Ast::FunctionDeclaration(FunctionDeclaration::new(
                 "test_prop_anyoneCanIncreaseFundInAPool"
             )))
+        );
+    }
+
+    #[test]
+    fn test_create_new_ast_root_wrong_format() {
+        let mut parser = Parser::new();
+        let test_line = "⇾ [FAILED] Assertion Test: foo";
+
+        let result = parser.create_new_reproducer(test_line);
+
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Couldn't parse property name"
         );
     }
 
@@ -308,19 +350,18 @@ mod tests {
     }
 
     #[test]
-    fn test_get_unique_name() {
+    fn test_generate_unique_test_name() {
         let mut parser = Parser::new();
         let test_line = "prop_anyoneCanIncreaseFundInAPool";
-        let _ = parser.generate_unique_test_name(test_line.to_string());
 
         assert_eq!(
             parser.generate_unique_test_name(test_line.to_string()),
-            "test_prop_anyoneCanIncreaseFundInAPool2"
+            "test_prop_anyoneCanIncreaseFundInAPool"
         );
     }
 
     #[test]
-    fn test_get_unique_name_multiple() {
+    fn test_generate_unique_test_name_multiple() {
         let mut parser = Parser::new();
         let test_line = "prop_anyoneCanIncreaseFundInAPool";
         let _ = parser.generate_unique_test_name(test_line.to_string());
@@ -334,7 +375,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_unique_name_prop_with_number() {
+    fn test_generate_unique_test_name_prop_with_number() {
         let mut parser = Parser::new();
         let test_line = "prop_anyoneCanIncreaseFundInAPool9";
 
@@ -350,15 +391,85 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_cheat_data() {
-        let parser = Parser::new();
+    fn test_add_new_call_to_ast() {
+        let mut parser = Parser::new();
         let test_line = "1) FuzzTest.property_canAlwaysCreateRequest(uint256,uint256)(1, 1) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
+        
+        let _ = parser.create_new_ast("test".to_string());
 
-        println!("{:?}", parser.parse_cheats_data(test_line.to_string()));
+        let result = parser.add_new_call_to_ast(test_line.to_string());
 
-        // assert_eq!(
-        //     runner.parse_cheats_data(test_line.to_string()),
-        //     "prop_anyoneCanIncreaseFundInAPool9"
-        // );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_add_new_call_to_ast_wrong_cheats() {
+        let mut parser = Parser::new();
+        let test_line = "1) FuzzTest.property_canAlwaysCreateRequest(uint256,uint256)(1, 1) (block=, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
+        
+        let _ = parser.create_new_ast("test".to_string());
+
+        let result = parser.add_new_call_to_ast(test_line.to_string());
+
+        assert_eq!(result.unwrap_err().to_string(), "failed to parse call context");
+    }
+
+    #[test]
+    fn test_add_new_call_to_as_wrong_args() {
+        let mut parser = Parser::new();
+        let test_line = "1) property_canAlwaysCreateRequest(uint256,uint256)(1, 1) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
+        
+        let _ = parser.create_new_ast("test".to_string());
+
+        let result = parser.add_new_call_to_ast(test_line.to_string());
+        
+        assert_eq!(result.unwrap_err().to_string(), "failed to extract property to call");
+    }
+
+    //@todo generate_call_to_medusa_property and parse_cheats_data
+
+    #[test]
+    fn test_parse_medusa_call_arguments() {
+        let parser = Parser::new();
+        let test_line = "1) property_canAlwaysCreateRequest(uint256,uint256)(1,1) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
+        
+        let result = parser.parse_medusa_call_arguments(test_line);
+
+        assert!(result.is_ok());
+
+        assert_eq!(
+            result.unwrap()[0],
+            "1,1"
+        );
+    }
+
+    #[test]
+    fn test_parse_medusa_call_arguments_tuple() {
+        let parser = Parser::new();
+        let test_line = "1) property_canAlwaysCreateRequest(uint256,uint256,(address,uint256),address)(1,1,(0x12,1),0x12) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
+        
+        let result = parser.parse_medusa_call_arguments(test_line);
+
+        assert!(result.is_ok());
+
+        assert_eq!(
+            result.unwrap()[0],
+            "1,1,(0x12,1),0x12"
+        );
+    }
+
+    #[test]
+    fn test_parse_medusa_call_arguments_bytes() {
+        let parser = Parser::new();
+        let test_line = "1) property_canAlwaysCreateRequest(uint256,bytes,(bytes,bytes,bytes),bytes)(1,,(,,),) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
+        
+        let result = parser.parse_medusa_call_arguments(test_line);
+
+        assert!(result.is_ok());
+
+        assert_eq!(
+            result.unwrap()[0],
+            "1,'',('','',''),''"
+        );
     }
 }
