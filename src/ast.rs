@@ -68,7 +68,7 @@ pub enum Statement {
 impl Statement {
     pub fn new_prank(pranked_address: &str) -> Self {
         Self::ContractCall(FunctionCall {
-            external_contract: Some("vm".to_string()),
+            target: Some("vm".to_string()),
             function_name: "prank".to_string(),
             value: None,
             arguments: vec![pranked_address.to_string()],
@@ -77,7 +77,7 @@ impl Statement {
 
     pub fn new_roll(block_to_roll: i32) -> Self {
         Self::ContractCall(FunctionCall {
-            external_contract: Some("vm".to_string()),
+            target: Some("vm".to_string()),
             function_name: "roll".to_string(),
             value: None,
             arguments: vec![block_to_roll.to_string()],
@@ -86,7 +86,7 @@ impl Statement {
 
     pub fn new_warp(timestamp_to_warp_to: i32) -> Self {
         Self::ContractCall(FunctionCall {
-            external_contract: Some("vm".to_string()),
+            target: Some("vm".to_string()),
             function_name: "warp".to_string(),
             value: None,
             arguments: vec![timestamp_to_warp_to.to_string()],
@@ -94,13 +94,13 @@ impl Statement {
     }
 
     pub fn new_contract_call(
-        external_contract: Option<String>,
+        target: Option<String>,
         function_name: String,
         value: Option<i32>,
         arguments: Vec<String>,
     ) -> Self {
         Self::ContractCall(FunctionCall {
-            external_contract,
+            target,
             function_name,
             value,
             arguments,
@@ -110,7 +110,7 @@ impl Statement {
 
 #[derive(Debug, PartialEq)]
 pub struct FunctionCall {
-    pub external_contract: Option<String>,
+    pub target: Option<String>,
     pub function_name: String,
     pub value: Option<i32>,
     pub arguments: Vec<String>,
