@@ -45,7 +45,7 @@ impl Emitter {
             }
         }
 
-        self.output.push_str("}}\n");
+        self.output.push_str("}\n");
     }
 
     fn emit_statement(&mut self, statement: &Statement) {
@@ -63,14 +63,11 @@ impl Emitter {
         // Indent at current block level
         call_to_construct.push_str(&" ".repeat(4));
 
-        // If external call, add the target
-        if let Some(to_call) = &contract_call.external_contract {
+        // If external call, add the target and new line
+        if let Some(to_call) = &contract_call.target {
             call_to_construct.push_str(to_call.as_str());
             call_to_construct.push('.');
-
-            if to_call.contains("this") {
-                add_new_line = true;
-            }
+            add_new_line = true;
         }
 
         // Add the function call
@@ -92,5 +89,65 @@ impl Emitter {
         }
 
         self.output.push_str(&call_to_construct);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_emit_function_declaration() {
+        let mut emitter = Emitter::new();
+        let test_function = FunctionDeclaration::new(
+            "test"
+        );
+        
+        emitter.emit_function_declaration(&test_function);
+
+        assert_eq!(
+            emitter.output,
+            "function test() public {\n}\n"
+        )
+    }
+
+    #[test]
+    fn test_emit_contract_call_external_call() {
+        let mut emitter = Emitter::new();
+        let test_function = FunctionCall {
+            target: Some("target".to_string()),
+            function_name: "TestName".to_string(),
+            value: Some(123),
+            arguments: vec!["1,2,3".to_string()],
+        };
+
+        let default_indentation = " ".repeat(4);
+
+        emitter.emit_contract_call(&test_function);
+
+        assert_eq!(
+            emitter.output,
+            format!("{}{}", default_indentation, "target.TestName{ value: 123 }(1,2,3);\n\n")
+        );
+    }
+
+    #[test]
+    fn test_emit_contract_call_internal_call() {
+        let mut emitter = Emitter::new();
+        let test_function = FunctionCall {
+            target: None,
+            function_name: "TestName".to_string(),
+            value: None,
+            arguments: vec!["".to_string()],
+        };
+
+        let default_indentation = " ".repeat(4);
+
+        emitter.emit_contract_call(&test_function);
+
+        assert_eq!(
+            emitter.output,
+            format!("{}{}", default_indentation, "TestName();\n")
+        );
     }
 }
