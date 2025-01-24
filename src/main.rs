@@ -29,7 +29,7 @@ fn main() -> anyhow::Result<()> {
     };
 
     let mut writer = stdout();
-    youdusa::process_input(input, &mut writer);
+    youdusa::process_input(input, &mut writer).context("Youdusa failed")?;
 
     Ok(())
 }
