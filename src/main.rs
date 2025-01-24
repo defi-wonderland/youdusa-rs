@@ -1,16 +1,7 @@
-mod ast;
-mod emitter;
-mod parser;
-mod reader;
-mod types;
-
 use anyhow::Context;
 use clap::Parser;
 use std::fs::File;
-use std::io::{self, IsTerminal, Read};
-
-use crate::emitter::Emitter;
-use crate::reader::Reader;
+use std::io::{self, stdout, IsTerminal, Read};
 
 #[derive(Parser)]
 #[command(author, version, about)]
@@ -37,20 +28,8 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    // build the ast
-    let reader = Reader::new(input);
-    let ast = reader.parse().context("Error: Failed to parse")?;
-
-    // emit the ast as solidity functions
-    if let Some(ast_to_emit) = ast {
-        for ast in ast_to_emit {
-            let mut emitter = Emitter::new();
-            emitter
-                .emit(&ast)
-                .context("Error: Failed to create solidity function")?;
-            println!("{}", emitter.get_emitted()); // for now, we stdout the reproducers
-        }
-    }
+    let mut writer = stdout();
+    youdusa::process_input(input, &mut writer);
 
     Ok(())
 }
