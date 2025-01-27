@@ -80,5 +80,7 @@ jobs:
 
       - name: Add PR comment
         uses: mshick/add-pr-comment@v2
-        with: |
+        with:
+          message: |
+            **Current test coverage**
           preformated: ${{ steps.codecov.outputs.new_cov_comment }}
