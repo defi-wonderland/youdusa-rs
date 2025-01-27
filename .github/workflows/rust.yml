@@ -83,4 +83,4 @@ jobs:
         with:
           message: |
             **Current test coverage**
-          preformated: ${{ steps.codecov.outputs.new_cov_comment }}
+          preformatted: ${{ steps.codecov.outputs.new_cov_comment }}
