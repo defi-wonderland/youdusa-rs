@@ -78,12 +78,13 @@ jobs:
           new_cov="${new_cov//$'\r'/'%0D'}"
           echo "::set-output name=new_cov_comment::$new_cov"
 
-      - uses: mshick/add-pr-comment@v2
+      - name: Add PR comment
+        uses: mshick/add-pr-comment@v2
         with:
           message: |
-            **Hello**
-            🌏
-            !
+            **Current test coverage**
+
+            ${{ steps.codecov.outputs.new_cov_comment }}
 
       # - name: Find Coverage Comment
       #   uses: peter-evans/find-comment@v3
