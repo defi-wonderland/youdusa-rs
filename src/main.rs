@@ -1,12 +1,42 @@
 use anyhow::Context;
-use clap::Parser;
+use clap::{crate_authors, Parser};
 use std::fs::File;
 use std::io::{self, stdout, IsTerminal, Read};
 
 #[derive(Parser)]
-#[command(author, version, about)]
+#[command(
+    name = "youdusa",
+    author = crate_authors!(",\n"),
+    version,
+    about,
+    long_about = None,
+
+    help_template = concat!(
+include_str!("ascii_art.txt"),
+"Made with ♥ by Wonderland (https://defi.sucks)\n
+╔════════════════╗\n\
+║    \x1B[31mYoudusa\x1B[0m     ║\n\
+╚════════════════╝\n\
+\n\
+{about}\n\
+\n\
+{usage-heading} {usage}\n\
+\n\
+{all-args}\n\
+\n\
+Authors:{author-section}
+Version: {version}
+\n\
+For more information, visit: https://github.com/defi-wonderland/youdusa-rs\n",
+))]
 struct Args {
-    #[arg(short, long, help = "Optional text file to parse")]
+    #[arg(
+        short,
+        long,
+        help = "Optional text file to parse",
+        long_help = "Specify a text file containing Medusa trace to parse. If not provided, \
+                    the program will expect input from stdin."
+    )]
     file: Option<String>,
 }
 
