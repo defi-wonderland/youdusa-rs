@@ -80,24 +80,7 @@ jobs:
 
       - name: Add PR comment
         uses: mshick/add-pr-comment@v2
-        with:
+        with: |
           message: |
             **Current test coverage**
-
-            ${{ steps.codecov.outputs.new_cov_comment }}
-
-      # - name: Find Coverage Comment
-      #   uses: peter-evans/find-comment@v3
-      #   id: fc
-      #   with:
-      #     comment-author: 'github-actions[bot]'
-      #     body-includes: Current coverage
-  
-      # - name: Create or update comment
-      #   uses: peter-evans/create-or-update-comment@v4
-      #   with:
-      #     comment-id: ${{ steps.fc.outputs.comment-id }}
-      #     body: |
-      #       Build output
-      #       ${{ steps.codecov.outputs.new_cov_comment }}
-      #     edit-mode: replace
+          preformated: ${{ steps.codecov.outputs.new_cov_comment }}
