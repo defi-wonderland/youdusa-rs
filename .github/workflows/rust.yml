@@ -78,18 +78,25 @@ jobs:
           new_cov="${new_cov//$'\r'/'%0D'}"
           echo "::set-output name=new_cov_comment::$new_cov"
 
-      - name: Find Coverage Comment
-        uses: peter-evans/find-comment@v3
-        id: fc
+      - uses: mshick/add-pr-comment@v2
         with:
-          comment-author: 'github-actions[bot]'
-          body-includes: Current coverage
+          message: |
+            **Hello**
+            🌏
+            !
+
+      # - name: Find Coverage Comment
+      #   uses: peter-evans/find-comment@v3
+      #   id: fc
+      #   with:
+      #     comment-author: 'github-actions[bot]'
+      #     body-includes: Current coverage
   
-      - name: Create or update comment
-        uses: peter-evans/create-or-update-comment@v4
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          body: |
-            Build output
-            ${{ steps.codecov.outputs.new_cov_comment }}
-          edit-mode: replace
+      # - name: Create or update comment
+      #   uses: peter-evans/create-or-update-comment@v4
+      #   with:
+      #     comment-id: ${{ steps.fc.outputs.comment-id }}
+      #     body: |
+      #       Build output
+      #       ${{ steps.codecov.outputs.new_cov_comment }}
+      #     edit-mode: replace
