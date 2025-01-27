@@ -49,10 +49,54 @@ jobs:
         run: cargo test
 
   coverage:
-    name: Integration Tests
+    name: Coverage
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
 
     steps:
       - uses: actions/checkout@v4
-      - name: Run tests
-        run: cargo test
+
+      - name: Cache cargo output
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Generate coverage report
+        id: codecov
+        run: |
+          cargo llvm-cov clean --workspace
+          cargo llvm-cov test
+ 
+          new_cov=$(cargo llvm-cov test)
+          new_cov="${new_cov//'%'/'%25'}"
+          new_cov="${new_cov//$'\n'/'%0A'}"
+          new_cov="${new_cov//$'\r'/'%0D'}"
+          echo "::set-output name=new_cov_comment::$new_cov"
+
+      - uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            **Current coverage**:
+
+            ${{ steps.codecov.outputs.new_cov_comment }}
+
+      - name: Find Coverage Comment
+        uses: peter-evans/find-comment@v3
+        id: fc
+        with:
+          comment-author: 'github-actions[bot]'
+          body-includes: Current coverage
+  
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          body: |
+            Build output
+            ${{ steps.codecov.outputs.new_cov_comment }}
+          edit-mode: replace
