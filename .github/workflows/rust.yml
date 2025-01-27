@@ -72,15 +72,15 @@ jobs:
           cargo llvm-cov clean --workspace
           cargo llvm-cov test
  
-        # new_cov=$(cargo llvm-cov test)
-        # new_cov="${new_cov//'%'/'%25'}"
-        # new_cov="${new_cov//$'\n'/'%0A'}"
-        # new_cov="${new_cov//$'\r'/'%0D'}"
-        # echo "::set-output name=new_cov_comment::$new_cov"
+          new_cov=$(cargo llvm-cov test)
+          new_cov="${new_cov//'%'/'%25'}"
+          new_cov="${new_cov//$'\n'/'%0A'}"
+          new_cov="${new_cov//$'\r'/'%0D'}"
+          echo "```::set-output name=new_cov_comment::$new_cov```"
 
       - name: Add PR comment
         uses: mshick/add-pr-comment@v2
         with:
           message: |
             **Current test coverage**
-            ```${{ steps.codecov.outputs.codecov }}```
+            ${{ steps.codecov.outputs.new_cov_comment }}
