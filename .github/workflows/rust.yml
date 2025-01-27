@@ -76,7 +76,7 @@ jobs:
           new_cov="${new_cov//'%'/'%25'}"
           new_cov="${new_cov//$'\n'/'%0A'}"
           new_cov="${new_cov//$'\r'/'%0D'}"
-          echo "```::set-output name=new_cov_comment::$new_cov```"
+          echo "::set-output name=new_cov_comment::$new_cov"
 
       - name: Add PR comment
         uses: mshick/add-pr-comment@v2
