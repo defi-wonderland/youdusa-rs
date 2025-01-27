@@ -37,13 +37,22 @@ jobs:
       - name: Run clippy
         run: cargo clippy --no-deps --all-targets
 
-  unit-tests:
-    name: Unit Tests
+  tests:
+    name: Unit and Integration Tests
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
       - name: Build
         run: cargo build
+      - name: Run tests
+        run: cargo test
+
+  coverage:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
       - name: Run tests
         run: cargo test
