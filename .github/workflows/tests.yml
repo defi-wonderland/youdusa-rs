@@ -51,9 +51,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: Run clippy
         run: |
-          cargo clippy --no-deps --all-targets -- -D warnings
           cargo clippy --version
           cargo --version
+          cargo clippy --no-deps --all-targets -- -D warnings
   docs:
     name: Docs
     runs-on: ubuntu-latest
