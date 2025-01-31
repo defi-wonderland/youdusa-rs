@@ -397,7 +397,7 @@ mod tests {
         let mut parser = Parser::new();
         let test_line = "1) FuzzTest.property_canAlwaysCreateRequest(uint256,uint256)(1, 1) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
 
-        let _ = parser.create_new_ast("test".to_string());
+        parser.create_new_ast("test".to_string());
 
         let result = parser.add_new_call_to_ast(test_line.to_string());
 
@@ -409,7 +409,7 @@ mod tests {
         let mut parser = Parser::new();
         let test_line = "1) FuzzTest.property_canAlwaysCreateRequest(uint256,uint256)(1, 1) (block=, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
 
-        let _ = parser.create_new_ast("test".to_string());
+        parser.create_new_ast("test".to_string());
 
         let result = parser.add_new_call_to_ast(test_line.to_string());
 
@@ -424,7 +424,7 @@ mod tests {
         let mut parser = Parser::new();
         let test_line = "1) property_canAlwaysCreateRequest(uint256,uint256)(1, 1) (block=43494, time=315910, gas=12500000, gasprice=1, value=0, sender=0x0000000000000000000000000000000000060000)";
 
-        let _ = parser.create_new_ast("test".to_string());
+        parser.create_new_ast("test".to_string());
 
         let result = parser.add_new_call_to_ast(test_line.to_string());
 
