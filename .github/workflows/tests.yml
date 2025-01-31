@@ -50,8 +50,10 @@ jobs:
       - name: Cache cargo output
         uses: Swatinem/rust-cache@v2
       - name: Run clippy
-        run: cargo clippy --no-deps --all-targets -- -D warnings
-
+        run: |
+          cargo clippy --no-deps --all-targets -- -D warnings
+          cargo clippy --version
+          cargo --version
   docs:
     name: Docs
     runs-on: ubuntu-latest
