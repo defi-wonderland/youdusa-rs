@@ -27,7 +27,7 @@ fn test_simple_log() {
     let input = load_test_file("test_log_simple.txt");
     let mut output = Vec::new();
 
-    let _ = youdusa::process_input(Box::new(input), &mut output).unwrap();
+    youdusa::process_input(Box::new(input), &mut output).unwrap();
 
     let output_str = String::from_utf8(output).unwrap();
 
@@ -58,7 +58,7 @@ fn test_multiple_log() {
     let input = load_test_file("test_log_multiple.txt");
     let mut output = Vec::new();
 
-    let _ = youdusa::process_input(Box::new(input), &mut output).unwrap();
+    youdusa::process_input(Box::new(input), &mut output).unwrap();
 
     let output_str = String::from_utf8(output).unwrap();
 
@@ -97,7 +97,7 @@ fn test_long_seq() {
     let input = load_test_file("test_log_long_seq.txt");
     let mut output = Vec::new();
 
-    let _ = youdusa::process_input(Box::new(input), &mut output).unwrap();
+    youdusa::process_input(Box::new(input), &mut output).unwrap();
 
     let output_str = String::from_utf8(output).unwrap();
 
