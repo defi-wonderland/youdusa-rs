@@ -2,12 +2,12 @@
 authors = ["simon-something", "Defi-Wonderland"]
 name = "youdusa"
 description = "Take a Medusa trace as input, parse it and create Foundry reproducer function for every failing properties"
-homepage = "https://github.com/defi-wonderland/medusa-gen-rs"
+homepage = "https://github.com/defi-wonderland/youdusa-rs"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/defi-wonderland/youdusa-rs"
 license = "MIT"
-readme = "readme.MD"
+readme = "README.md"
 keywords = ["medusa", "foundry", "solidity", "fuzzing", "reproducer"]
 categories = ["command-line-utilities"]
 
@@ -22,6 +22,3 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0.92"
 clap = { version = "4.5.21", features = ["cargo", "derive"] }
-serde = { version = "1.0.215", features = ["derive"] }
-serde_json = "1.0.133"
-env_logger = "0.10"

@@ -1,8 +1,12 @@
+# Youdusa
+
 This tool generate a foundry test for failling call sequences of a Medusa fuzz campaign.
+
+Made with ♥ by Wonderland (https://defi.sucks)
 
 ## Installation
 ```bash
-cargo install --git https://github.com/defi-wonderland/youdusa-rs
+cargo install youdusa
 ```
 
 ## Usage
