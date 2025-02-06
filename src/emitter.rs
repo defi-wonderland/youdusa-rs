@@ -79,10 +79,7 @@ impl Emitter {
         // Add a { value: X } if needed
         if let Some(value) = &contract_call.value {
             if *value != U256::zero() {
-                println!("Raw value: {:?}", value);
-                println!("ToString value: {}", value.to_string());
-                println!("Hex value: {:x}", value);
-                call_to_construct.push_str(&format!("{{ value: {} }}", value.to_string()));
+                call_to_construct.push_str(&format!("{{ value: {} }}", value));
             }
         }
 
@@ -102,8 +99,6 @@ impl Emitter {
 
 #[cfg(test)]
 mod tests {
-    use core::str::FromStr;
-
     use super::*;
 
     #[test]
@@ -155,10 +150,7 @@ mod tests {
 
         assert_eq!(
             emitter.output,
-            format!(
-                "{}{}",
-                default_indentation, "target.TestName(1,2,3);\n\n"
-            )
+            format!("{}{}", default_indentation, "target.TestName(1,2,3);\n\n")
         );
     }
 

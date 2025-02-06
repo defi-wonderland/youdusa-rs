@@ -2,8 +2,8 @@ use crate::ast::{Ast, FunctionDeclaration, Statement};
 use crate::types::CheatsData;
 
 use anyhow::{anyhow, Context, Ok, Result};
-use std::collections::HashMap;
 use primitive_types::U256;
+use std::collections::HashMap;
 
 /// Define how to go from the Medusa trace to a complete Youdusa ast
 #[derive(Debug)]
