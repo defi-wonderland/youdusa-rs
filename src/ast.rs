@@ -1,4 +1,4 @@
-// Todo: store all function get_common_name in a hashmap, then use it to check for duplicate
+use primitive_types::U256;
 
 /// Youdusa AST, used to build representation of reproducers
 /// Only the relevant part of Solidity semantics is implemented
@@ -96,7 +96,7 @@ impl Statement {
     pub fn new_contract_call(
         target: Option<String>,
         function_name: String,
-        value: Option<i32>,
+        value: Option<U256>,
         arguments: Vec<String>,
     ) -> Self {
         Self::ContractCall(FunctionCall {
@@ -112,6 +112,6 @@ impl Statement {
 pub struct FunctionCall {
     pub target: Option<String>,
     pub function_name: String,
-    pub value: Option<i32>,
+    pub value: Option<U256>,
     pub arguments: Vec<String>,
 }

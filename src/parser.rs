@@ -3,6 +3,7 @@ use crate::types::CheatsData;
 
 use anyhow::{anyhow, Context, Ok, Result};
 use std::collections::HashMap;
+use primitive_types::U256;
 
 /// Define how to go from the Medusa trace to a complete Youdusa ast
 #[derive(Debug)]
@@ -134,7 +135,7 @@ impl Parser {
     /// Parse the property name and create a new external call targeting 'this'
     /// @dev For now, the args are returned as a Vec containing a single String
     /// futureproof would be parse them individually, including nested struct
-    fn generate_call_to_medusa_property(&self, line: String, value: i32) -> Result<Statement> {
+    fn generate_call_to_medusa_property(&self, line: String, value: U256) -> Result<Statement> {
         let property_name = self
             .extract_property_name(&line)
             .ok_or_else(|| anyhow::anyhow!("Failed to extract property name"))?;
@@ -170,7 +171,7 @@ impl Parser {
                     block_to_roll: map.get("block")?.parse().ok()?,
                     timestamp_to_warp_to: map.get("time")?.parse().ok()?,
                     caller_to_prank: map.get("sender")?.parse().ok()?,
-                    value: map.get("value")?.parse().ok()?,
+                    value: U256::from_dec_str(map.get("value")?).ok()?,
                 })
             })
     }
