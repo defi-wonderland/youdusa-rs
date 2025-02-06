@@ -22,3 +22,4 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0.92"
 clap = { version = "4.5.21", features = ["cargo", "derive"] }
+primitive-types = "0.13.1"
