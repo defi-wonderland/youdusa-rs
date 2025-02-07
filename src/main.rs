@@ -1,8 +1,8 @@
 use anyhow::Context;
 use clap::{crate_authors, Parser};
 use std::fs::File;
-use std::io::{self, stdout, IsTerminal, Read};
 use std::io::Cursor;
+use std::io::{self, stdout, IsTerminal, Read};
 #[derive(Parser)]
 #[command(
     name = "youdusa",
@@ -49,15 +49,18 @@ fn main() -> anyhow::Result<()> {
 
     let input: Box<dyn Read + 'static> = if !stdin.is_terminal() {
         // piped input
-
         println!("Running Medusa with Youdusa help");
         println!(
             "╔════════════════╗\n\
              ║    \x1B[31mYoudusa\x1B[0m     ║\n\
-             ╚════════════════╝\n");
+             ╚════════════════╝\n"
+        );
 
         let mut buffer = Vec::new();
-        stdin.lock().read_to_end(&mut buffer).context("failed to read pipe")?;
+        stdin
+            .lock()
+            .read_to_end(&mut buffer)
+            .context("failed to read pipe")?;
 
         println!("{}", String::from_utf8_lossy(&buffer));
 
