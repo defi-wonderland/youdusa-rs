@@ -23,7 +23,7 @@ impl Emitter {
     pub fn emit(&mut self, ast: &Ast) -> Result<()> {
         match ast {
             Ast::FunctionDeclaration(fn_declaration) => {
-                self.emit_function_declaration(fn_declaration)
+                self.emit_function_declaration(fn_declaration);
             }
             Ast::Statement(statement) => self.emit_statement(statement),
         }
@@ -53,7 +53,7 @@ impl Emitter {
         }
 
         self.output.push_str(&" ".repeat(self.default_indentation));
-        self.output.push_str("}");
+        self.output.push_str("}\n");
     }
 
     fn emit_statement(&mut self, statement: &Statement) {

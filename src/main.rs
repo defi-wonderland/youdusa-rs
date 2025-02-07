@@ -51,7 +51,7 @@ struct Args {
         default_value = "false"
     )
     ]
-    output: Option<bool>,
+    write_contract: Option<bool>,
 }
 
 /// Take a Medusa trace as input, parse it and create Foundry reproducer function for every failing properties
@@ -79,14 +79,18 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    let mut writer = Vec::new();
+    if args.write_contract.unwrap_or(false) {
+        let mut writer = Vec::new();
 
-    youdusa::process_input(input, &mut writer).context("Youdusa failed")?;
-
-    println!("{}", String::from_utf8_lossy(&writer));
-
-    let file_writer = Contract::new(&writer).context("Contract init error")?;
-    file_writer.write_rendered_contract().context("Write error")?;
+        youdusa::process_input(input, &mut writer).context("Youdusa failed")?;
+    
+        println!("{}", String::from_utf8_lossy(&writer));
+    
+        let file_writer = Contract::new(&writer).context("Contract init error")?;
+        file_writer.write_rendered_contract().context("Write error")?;
+    } else {
+        youdusa::process_input(input, &mut stdout()).context("Youdusa failed")?;
+    }
 
     Ok(())
 }
