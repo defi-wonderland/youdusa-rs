@@ -2,6 +2,7 @@ use anyhow::Context;
 use clap::{crate_authors, Parser};
 use std::fs::File;
 use std::io::{self, stdout, IsTerminal, Read};
+use tee::TeeReader;
 
 #[derive(Parser)]
 #[command(
@@ -48,8 +49,15 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     let input: Box<dyn Read + 'static> = if !stdin.is_terminal() {
-        // piped input
-        Box::new(io::stdin())
+        // piped input: we use a tee reader, to avoid buffering the whole stdout before flushing it
+        println!("Running Medusa with Youdusa help");
+        println!(
+            "╔════════════════╗\n\
+             ║    \x1B[31mYoudusa\x1B[0m     ║\n\
+             ╚════════════════╝\n"
+        );
+
+        Box::new(TeeReader::new(stdin.lock(), stdout()))
     } else {
         // file provided
         match &args.file {
