@@ -46,11 +46,11 @@ struct Args {
     #[arg(
         short,
         long,
+        action = clap::ArgAction::SetTrue,
         help = "Write the output in a reproducer contract",
         long_help = "Write the output in a reproducer contract",
-        default_value = "false"
     )]
-    write_contract: Option<bool>,
+    write: bool,
 }
 
 /// Take a Medusa trace as input, parse it and create Foundry reproducer function for every failing properties
@@ -78,7 +78,7 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    if args.write_contract.unwrap_or(false) {
+    if args.write {
         let mut writer = Vec::new();
 
         youdusa::process_input(input, &mut writer).context("Youdusa failed")?;
