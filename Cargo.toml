@@ -3,7 +3,7 @@ authors = ["simon-something", "Defi-Wonderland"]
 name = "youdusa"
 description = "Take a Medusa trace as input, parse it and create Foundry reproducer function for every failing properties"
 homepage = "https://github.com/defi-wonderland/youdusa-rs"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2021"
 repository = "https://github.com/defi-wonderland/youdusa-rs"
 license = "MIT"
@@ -21,6 +21,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.92"
+askama = "0.12.1"
 clap = { version = "4.5.21", features = ["cargo", "derive"] }
 primitive-types = "0.13.1"
 tee = "0.1.0"

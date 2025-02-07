@@ -4,6 +4,9 @@ use std::fs::File;
 use std::io::{self, stdout, IsTerminal, Read};
 use tee::TeeReader;
 
+mod contract_writer;
+use contract_writer::Contract;
+
 #[derive(Parser)]
 #[command(
     name = "youdusa",
@@ -11,6 +14,13 @@ use tee::TeeReader;
     version,
     about,
     long_about = None,
+    after_help = "\
+    EXAMPLES:
+      • Piped input:
+          medusa fuzz | youdusa
+      • File input:
+          youdusa --file trace.txt
+    ",
 
     help_template = concat!(
 include_str!("ascii_art.txt"),
@@ -28,6 +38,8 @@ include_str!("ascii_art.txt"),
 Authors:{author-section}
 Version: {version}
 \n\
+{after-help}
+\n\
 For more information, visit: https://github.com/defi-wonderland/youdusa-rs\n",
 ))]
 struct Args {
@@ -39,6 +51,15 @@ struct Args {
                     the program will expect input from stdin."
     )]
     file: Option<String>,
+
+    #[arg(
+        short,
+        long,
+        action = clap::ArgAction::SetTrue,
+        help = "Write the output in a reproducer contract",
+        long_help = "Write the output in a reproducer contract",
+    )]
+    write: bool,
 }
 
 /// Take a Medusa trace as input, parse it and create Foundry reproducer function for every failing properties
@@ -66,8 +87,20 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    let mut writer = stdout();
-    youdusa::process_input(input, &mut writer).context("Youdusa failed")?;
+    if args.write {
+        let mut writer = Vec::new();
+
+        youdusa::process_input(input, &mut writer).context("Youdusa failed")?;
+
+        println!("{}", String::from_utf8_lossy(&writer));
+
+        let file_writer = Contract::new(&writer).context("Contract init error")?;
+        file_writer
+            .write_rendered_contract()
+            .context("Write error")?;
+    } else {
+        youdusa::process_input(input, &mut stdout()).context("Youdusa failed")?;
+    }
 
     Ok(())
 }

@@ -23,7 +23,7 @@ impl Emitter {
     pub fn emit(&mut self, ast: &Ast) -> Result<()> {
         match ast {
             Ast::FunctionDeclaration(fn_declaration) => {
-                self.emit_function_declaration(fn_declaration)
+                self.emit_function_declaration(fn_declaration);
             }
             Ast::Statement(statement) => self.emit_statement(statement),
         }
