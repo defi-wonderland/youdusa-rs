@@ -89,6 +89,13 @@ fn get_target_path() -> Result<String> {
         .and_then(|val| val.as_str())
         .unwrap_or("test/invariants/fuzz/");
 
+    // If the target json value is "" or ".", then default to "test/invariants/fuzz/"
+    let target_str = if target_str.trim().is_empty() || target_str.trim() == "." {
+        "test/invariants/fuzz/"
+    } else {
+        target_str
+    };
+
     let target_path = Path::new(target_str);
     let final_target = if target_path.extension().is_some() {
         // Target seems to be a file, so use its parent directory.
