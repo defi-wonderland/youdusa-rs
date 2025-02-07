@@ -53,7 +53,7 @@ impl Emitter {
         }
 
         self.output.push_str(&" ".repeat(self.default_indentation));
-        self.output.push_str("}\n");
+        self.output.push_str("}");
     }
 
     fn emit_statement(&mut self, statement: &Statement) {

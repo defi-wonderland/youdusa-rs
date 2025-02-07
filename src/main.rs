@@ -4,6 +4,9 @@ use std::fs::File;
 use std::io::{self, stdout, IsTerminal, Read};
 use tee::TeeReader;
 
+mod contract_writer;
+use contract_writer::Contract;
+
 #[derive(Parser)]
 #[command(
     name = "youdusa",
@@ -39,6 +42,16 @@ struct Args {
                     the program will expect input from stdin."
     )]
     file: Option<String>,
+
+    #[arg(
+        short,
+        long,
+        help = "Write the output in a reproducer contract",
+        long_help = "Write the output in a reproducer contract",
+        default_value = "false"
+    )
+    ]
+    output: Option<bool>,
 }
 
 /// Take a Medusa trace as input, parse it and create Foundry reproducer function for every failing properties
@@ -66,8 +79,14 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
-    let mut writer = stdout();
+    let mut writer = Vec::new();
+
     youdusa::process_input(input, &mut writer).context("Youdusa failed")?;
+
+    println!("{}", String::from_utf8_lossy(&writer));
+
+    let file_writer = Contract::new(&writer).context("Contract init error")?;
+    file_writer.write_rendered_contract().context("Write error")?;
 
     Ok(())
 }
