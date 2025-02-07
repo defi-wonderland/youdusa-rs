@@ -6,12 +6,16 @@ use primitive_types::U256;
 pub struct Emitter {
     /// All the reproducer function ready to output
     output: String,
+
+    /// Starting indentation level
+    default_indentation: usize,
 }
 
 impl Emitter {
     pub fn new() -> Self {
         Self {
             output: String::new(),
+            default_indentation: 4,
         }
     }
 
@@ -33,6 +37,8 @@ impl Emitter {
 
     /// Emit a function declaration
     fn emit_function_declaration(&mut self, fn_declaration: &FunctionDeclaration) {
+        self.output.push_str(&" ".repeat(self.default_indentation));
+
         self.output
             .push_str(&format!("function {}() public {{\n", fn_declaration.name()));
 
@@ -46,6 +52,7 @@ impl Emitter {
             }
         }
 
+        self.output.push_str(&" ".repeat(self.default_indentation));
         self.output.push_str("}\n");
     }
 
@@ -62,7 +69,7 @@ impl Emitter {
         let mut add_new_line = false; // only add a new line after non-cheatcodes call
 
         // Indent at current block level
-        call_to_construct.push_str(&" ".repeat(4));
+        call_to_construct.push_str(&" ".repeat(self.default_indentation + 4));
 
         // If external call, add the target and new line
         if let Some(to_call) = &contract_call.target {
@@ -108,7 +115,7 @@ mod tests {
 
         emitter.emit_function_declaration(&test_function);
 
-        assert_eq!(emitter.output, "function test() public {\n}\n")
+        assert_eq!(emitter.output, "    function test() public {\n    }\n")
     }
 
     #[test]
@@ -129,7 +136,7 @@ mod tests {
             emitter.output,
             format!(
                 "{}{}",
-                default_indentation, "target.TestName{ value: 123 }(1,2,3);\n\n"
+                default_indentation, "    target.TestName{ value: 123 }(1,2,3);\n\n"
             )
         );
     }
@@ -150,7 +157,10 @@ mod tests {
 
         assert_eq!(
             emitter.output,
-            format!("{}{}", default_indentation, "target.TestName(1,2,3);\n\n")
+            format!(
+                "{}{}",
+                default_indentation, "    target.TestName(1,2,3);\n\n"
+            )
         );
     }
 
@@ -170,7 +180,7 @@ mod tests {
 
         assert_eq!(
             emitter.output,
-            format!("{}{}", default_indentation, "TestName();\n")
+            format!("{}{}", default_indentation, "    TestName();\n")
         );
     }
 
@@ -190,7 +200,7 @@ mod tests {
 
         assert_eq!(
             emitter.output,
-            format!("{}{}", default_indentation, "vm.TestName();\n")
+            format!("{}{}", default_indentation, "    vm.TestName();\n")
         );
     }
 }
