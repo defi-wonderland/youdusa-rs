@@ -14,6 +14,13 @@ use contract_writer::Contract;
     version,
     about,
     long_about = None,
+    after_help = "\
+    EXAMPLES:
+      • Piped input:
+          medusa fuzz | youdusa
+      • File input:
+          youdusa --file trace.txt
+    ",
 
     help_template = concat!(
 include_str!("ascii_art.txt"),
@@ -30,6 +37,8 @@ include_str!("ascii_art.txt"),
 \n\
 Authors:{author-section}
 Version: {version}
+\n\
+{after-help}
 \n\
 For more information, visit: https://github.com/defi-wonderland/youdusa-rs\n",
 ))]
