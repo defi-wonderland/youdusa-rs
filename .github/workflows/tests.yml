@@ -1,154 +1,130 @@
-name: CI
+name: tests
 
-on: [push]
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
 
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 
 env:
-  MAINNET_RPC: ${{ secrets.MAINNET_RPC }}
-  SEPOLIA_RPC: ${{ secrets.SEPOLIA_RPC }}
+  CARGO_TERM_COLOR: always
 
 jobs:
-  unit-tests:
-    name: Run Unit Tests
+
+######################################################################
+#                   General checks/fmt and docs
+######################################################################
+
+  fmt:
+    name: Format
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+      - name: Cache cargo output
+        uses: Swatinem/rust-cache@v2
+      - name: Fmt check
+        run: cargo fmt --check
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          cache: 'yarn'
-
-      - name: Install dependencies
-        run: yarn --frozen-lockfile --network-concurrency 1
-
-      - name: Precompile using 0.8.14 and via-ir=false
-        run: yarn build
-
-      - name: Run tests
-        shell: bash
-        run: yarn test:unit
-
-  integration-tests:
-    name: Run Integration Tests
+  check:
+    name: Check
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+      - name: Cache cargo output
+        uses: Swatinem/rust-cache@v2
+      - name: Check
+        run: cargo check
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          cache: 'yarn'
-
-      - name: Install dependencies
-        run: yarn --frozen-lockfile --network-concurrency 1
-
-      - name: Precompile using 0.8.14 and via-ir=false
-        run: yarn build
-
-      - name: Run tests
-        run: yarn test:integration
-
-  echidna-tests:
-    name: Echidna Test
+  clippy:
+    name: Clippy
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          cache: 'yarn'
-
-      - name: Install dependencies
-        run: yarn --frozen-lockfile --network-concurrency 1
-
-      - name: Compile contracts
+      - uses: actions/checkout@v4
+      - name: Cache cargo output
+        uses: Swatinem/rust-cache@v2
+      - name: Run clippy
         run: |
-          forge build --build-info
-
-      - name: Run Echidna
-        uses: crytic/echidna-action@v2
-        with:
-          files: .
-          contract: InvariantGreeter
-          test-mode: assertion
-          crytic-args: --ignore-compile
-
-  halmos-tests:
-    name: Run symbolic execution tests
+          cargo clippy --version
+          cargo --version
+          cargo clippy --no-deps --all-targets -- -D warnings
+  docs:
+    name: Docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Cache cargo output
+        uses: Swatinem/rust-cache@v2
+      - name: Build docs
+        run: cargo doc --no-deps --all-features
+        env:
+          RUSTFLAGS: "-D warnings"
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
+######################################################################
+#       Unit/integration/coverage tests, multi OS
+######################################################################
 
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          cache: 'yarn'
+  tests:
+    name: Unit and Integration Tests on ${{ matrix.os }}
+    timeout-minutes: 10
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+      fail-fast: false # continue running other OS even if one fails
 
-      - name: Install dependencies
-        run: yarn --frozen-lockfile --network-concurrency 1
-
-      - name: Precompile with via-ir=false
-        run: yarn build
-
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache cargo output
+        uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build
       - name: Run tests
-        run: yarn test:integration
+        run: cargo test
 
-  lint:
-    name: Lint Commit Messages
+  coverage:
+    name: Coverage
+    timeout-minutes: 10
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Cache cargo output
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Generate coverage report
+        id: codecov
+        run: |
+          cargo llvm-cov clean --workspace
+          cargo llvm-cov test
+ 
+          new_cov=$(cargo llvm-cov test)
+          new_cov="${new_cov//'%'/'%25'}"
+          new_cov="${new_cov//$'\n'/'%0A'}"
+          new_cov="${new_cov//$'\r'/'%0D'}"
+          echo "::set-output name=new_cov_comment::$new_cov"
+
+      - name: Add PR comment
+        uses: mshick/add-pr-comment@v2
         with:
-          fetch-depth: 0
+          message: |
+            **Current test coverage**
 
-      - uses: wagoid/commitlint-github-action@v5
-
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          cache: 'yarn'
-
-      - name: Install dependencies
-        run: yarn --frozen-lockfile --network-concurrency 1
-
-      - run: yarn lint:check
+            ```
+            ${{ steps.codecov.outputs.new_cov_comment }}
+            ```
