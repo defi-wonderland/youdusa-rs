@@ -49,8 +49,7 @@ struct Args {
         help = "Write the output in a reproducer contract",
         long_help = "Write the output in a reproducer contract",
         default_value = "false"
-    )
-    ]
+    )]
     write_contract: Option<bool>,
 }
 
@@ -83,11 +82,13 @@ fn main() -> anyhow::Result<()> {
         let mut writer = Vec::new();
 
         youdusa::process_input(input, &mut writer).context("Youdusa failed")?;
-    
+
         println!("{}", String::from_utf8_lossy(&writer));
-    
+
         let file_writer = Contract::new(&writer).context("Contract init error")?;
-        file_writer.write_rendered_contract().context("Write error")?;
+        file_writer
+            .write_rendered_contract()
+            .context("Write error")?;
     } else {
         youdusa::process_input(input, &mut stdout()).context("Youdusa failed")?;
     }

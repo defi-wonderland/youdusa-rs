@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use askama::Template;
 use std::fs::File;
 use std::io::Write as WriteIO;
@@ -14,21 +14,23 @@ pub struct Contract {
 
 impl Contract {
     pub fn new(reproducers: &[u8]) -> Result<Contract> {
-        let contract_name = Contract::find_first_unused_filename().context("Failed to find a filename")?;
+        let contract_name =
+            Contract::find_first_unused_filename().context("Failed to find a filename")?;
 
-        Ok(Contract { reproducers: String::from_utf8_lossy(reproducers).to_string(), contract_name })
+        Ok(Contract {
+            reproducers: String::from_utf8_lossy(reproducers).to_string(),
+            contract_name,
+        })
     }
 
     pub fn write_rendered_contract(&self) -> Result<()> {
         let mut f = File::create_new(format!("{}.t.sol", self.contract_name))
-            .context(format!("Failed to create contract"))?;
+            .context("Failed to create contract")?;
 
-        let rendered = self
-            .render()
-            .context(format!("Fail to render contract"))?;
+        let rendered = self.render().context("Fail to render contract")?;
 
         f.write_all(rendered.as_bytes())
-            .context(format!("Failed to write contract"))?;
+            .context("Failed to write contract")?;
 
         Ok(())
     }
@@ -36,7 +38,13 @@ impl Contract {
     fn find_first_unused_filename() -> Result<String> {
         // Avoiding Regex intensifies
         (0..)
-            .map(|i| if i == 0 { "ForgeReproducer".to_owned() } else { format!("ForgeReproducer{}", i) })
+            .map(|i| {
+                if i == 0 {
+                    "ForgeReproducer".to_owned()
+                } else {
+                    format!("ForgeReproducer{}", i)
+                }
+            })
             .find(|base| !Path::new(&format!("{}{}", base, ".t.sol")).exists())
             .ok_or_else(|| anyhow!("No available filename found"))
     }
