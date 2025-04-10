@@ -1,9 +1,9 @@
 use anyhow::{anyhow, Context, Result};
 use askama::Template;
+use serde_json::Value;
 use std::fs::{self, File};
 use std::io::Write as WriteIO;
 use std::path::Path;
-use serde_json::Value;
 
 /// The contract template,
 #[derive(Template, Debug, Clone, PartialEq)]
@@ -18,27 +18,25 @@ impl Contract {
     pub fn new(reproducers: &[u8]) -> Result<Contract> {
         let path = get_target_path().context("Failed to get target path")?;
 
-        let contract_name =
-            Contract::find_first_unused_filename(path.clone()).context("Failed to find a filename")?;
+        let contract_name = Contract::find_first_unused_filename(path.clone())
+            .context("Failed to find a filename")?;
 
         Ok(Contract {
             reproducers: String::from_utf8_lossy(reproducers).to_string(),
             contract_name,
-            path
+            path,
         })
     }
 
-    pub fn write_rendered_contract(&self) -> Result<()> {        
+    pub fn write_rendered_contract(&self) -> Result<()> {
         // Ensure the target directory exists (create it if not)
-        fs::create_dir_all(&self.path)
-            .context("Failed to create target directory")?;
-        
+        fs::create_dir_all(&self.path).context("Failed to create target directory")?;
+
         // Construct the full filepath by combining the target directory and contract file name.
         let file_name = format!("{}.t.sol", self.contract_name);
         let output_filepath = std::path::Path::new(&self.path).join(file_name);
 
-        let mut f = File::create_new(&output_filepath)
-            .context("Failed to create contract file")?;
+        let mut f = File::create_new(&output_filepath).context("Failed to create contract file")?;
 
         let rendered = self.render().context("Fail to render contract")?;
 
@@ -77,10 +75,9 @@ fn get_target_path() -> Result<String> {
         return Ok(default_target);
     }
 
-    let medusa_contents = fs::read_to_string(medusa_file)
-        .context("Failed to read medusa.json")?;
-    let parsed: Value = serde_json::from_str(&medusa_contents)
-        .context("Failed to parse medusa.json")?;
+    let medusa_contents = fs::read_to_string(medusa_file).context("Failed to read medusa.json")?;
+    let parsed: Value =
+        serde_json::from_str(&medusa_contents).context("Failed to parse medusa.json")?;
 
     let target_str = parsed
         .get("compilation")
