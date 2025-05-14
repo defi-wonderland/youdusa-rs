@@ -1,6 +1,6 @@
 # Youdusa
 
-This tool generate a foundry test for failling call sequences of a Medusa fuzz campaign.
+This tool generate a foundry test for failling call sequences of a Medusa fuzz campaign. 1
 
 Made with ♥ by Wonderland (https://defi.sucks)
 
