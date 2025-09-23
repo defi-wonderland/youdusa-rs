@@ -1,5 +1,8 @@
 # Youdusa
 
+## Deprecation notice
+Given we're no longer using medusa due to foundry adding first-class support for coverage-guided fuzzing, and foundry also including the [`show_solidity`](https://getfoundry.sh/config/reference/testing#invariant) config that produces counterexamples as solidity code.
+
 This tool generate a foundry test for failling call sequences of a Medusa fuzz campaign.
 
 Made with ♥ by Wonderland (https://defi.sucks)
